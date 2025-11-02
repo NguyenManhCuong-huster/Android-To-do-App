@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Todo App</string>
+
+    <string name="task_time_format">%1$s → %2$s</string>
+</resources>

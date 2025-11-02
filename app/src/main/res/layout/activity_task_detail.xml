@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/tvStart"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:text="Start:"
+        android:autoSizeTextType="uniform"
+        android:autoSizeMinTextSize="12sp"
+        android:autoSizeMaxTextSize="20sp"
+        android:autoSizeStepGranularity="1sp"
+        android:gravity="center_vertical"
+
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/glTime"
+        app:layout_constraintTop_toTopOf="@id/etStart"
+        app:layout_constraintBottom_toBottomOf="@id/etStart" />
+
+    <TextView
+        android:id="@+id/tvEnd"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:text="End:"
+        android:autoSizeTextType="uniform"
+        android:autoSizeMinTextSize="12sp"
+        android:autoSizeMaxTextSize="20sp"
+        android:autoSizeStepGranularity="1sp"
+        android:gravity="center_vertical"
+
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/glTime"
+        app:layout_constraintTop_toTopOf="@id/etEnd"
+        app:layout_constraintBottom_toBottomOf="@id/etEnd" />
+
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/glTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+
+        app:layout_constraintGuide_percent="0.15" />
+
+    <EditText
+        android:id="@+id/etStart"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:focusable="false"
+        android:clickable="true"
+
+        android:hint="Enter start time"
+        android:background="@drawable/task_border"
+        android:gravity="top|start"
+        android:inputType="text"
+
+        app:layout_constraintStart_toStartOf="@id/glTime"
+        app:layout_constraintEnd_toStartOf="@id/btnCancel"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <EditText
+        android:id="@+id/etEnd"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:focusable="false"
+        android:clickable="true"
+
+        android:hint="Enter end time"
+        android:background="@drawable/task_border"
+        android:gravity="top|start"
+        android:inputType="text"
+        android:layout_marginTop="4dp"
+
+        app:layout_constraintStart_toStartOf="@id/glTime"
+        app:layout_constraintEnd_toStartOf="@id/btnCancel"
+        app:layout_constraintTop_toBottomOf="@id/etStart" />
+
+    <ImageButton
+        android:id="@+id/btnCancel"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+
+        android:src="@drawable/ic_cancel"
+        app:tint="@color/red"
+        android:background="@android:color/transparent"
+        android:contentDescription="Cancel edit"
+        android:scaleType="center"
+
+        app:layout_constraintEnd_toStartOf="@id/btnSave"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/barrierEnd" />
+
+    <ImageButton
+        android:id="@+id/btnSave"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+
+        android:src="@drawable/ic_done"
+        app:tint="@color/light_blue_600"
+        android:background="@android:color/transparent"
+        android:contentDescription="Save task"
+        android:scaleType="center"
+
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/barrierEnd" />
+
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barrierEnd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="bottom"
+        app:constraint_referenced_ids="etEnd" />
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Title"
+        android:textSize="24sp"
+        android:layout_marginVertical="4dp"
+
+        app:layout_constraintTop_toBottomOf="@id/barrierEnd"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <EditText
+        android:id="@+id/etTitle"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:hint="Enter title"
+        android:background="@drawable/task_border"
+        android:gravity="top|start"
+        android:inputType="text"
+
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle" />
+
+
+    <TextView
+        android:id="@+id/tvDescription"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Description"
+        android:textSize="20sp"
+        android:layout_marginVertical="4dp"
+
+        app:layout_constraintTop_toBottomOf="@id/etTitle"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <EditText
+        android:id="@+id/etDescription"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:hint="Enter description"
+        android:background="@drawable/task_border"
+        android:gravity="top|start"
+        android:layout_marginVertical="8dp"
+        android:inputType="text"
+
+
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvDescription"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
