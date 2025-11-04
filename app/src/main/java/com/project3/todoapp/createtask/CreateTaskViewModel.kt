@@ -3,6 +3,7 @@ package com.project3.todoapp.createtask
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.project3.todoapp.data.TaskRepository
 import kotlinx.coroutines.launch
@@ -15,7 +16,7 @@ class CreateTaskViewModel(
 
     private val _taskCreated = MutableLiveData<Boolean>()
     val taskCreated: LiveData<Boolean> = _taskCreated
-    
+
     fun createTask(title: String, description: String, start: Long, end: Long) {
         if (start > end) {
             _errorMessage.value = "Start time must be before end time"
@@ -25,6 +26,20 @@ class CreateTaskViewModel(
         viewModelScope.launch {
             repository.createTask(title, description, start, end)
             _taskCreated.value = true
+        }
+    }
+
+    companion object {
+        fun provideFactory(
+            repository: TaskRepository
+        ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                if (modelClass.isAssignableFrom(CreateTaskViewModel::class.java)) {
+                    return CreateTaskViewModel(repository) as T
+                }
+                throw IllegalArgumentException("Unknown ViewModel class")
+            }
         }
     }
 }

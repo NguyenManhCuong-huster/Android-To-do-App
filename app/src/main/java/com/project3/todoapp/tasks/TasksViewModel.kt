@@ -1,6 +1,7 @@
 package com.project3.todoapp.tasks
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.project3.todoapp.data.Task
 import com.project3.todoapp.data.TaskRepository
@@ -54,5 +55,18 @@ class TasksViewModel(
             repository.deleteTask(id)
         }
     }
-}
 
+    companion object {
+        fun provideFactory(
+            repository: TaskRepository
+        ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                if (modelClass.isAssignableFrom(TasksViewModel::class.java)) {
+                    return TasksViewModel(repository) as T
+                }
+                throw IllegalArgumentException("Unknown ViewModel class")
+            }
+        }
+    }
+}

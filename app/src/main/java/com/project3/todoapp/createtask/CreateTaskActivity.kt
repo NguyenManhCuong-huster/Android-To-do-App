@@ -3,7 +3,9 @@ package com.project3.todoapp.createtask
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.os.Bundle
+import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.project3.todoapp.Repository
@@ -16,20 +18,18 @@ import java.util.Locale
 
 class CreateTaskActivity : AppCompatActivity() {
 
-    private lateinit var viewModel: CreateTaskViewModel
+    private val repository by lazy { Repository.provideRepository(this) }
+    private val viewModel: CreateTaskViewModel by viewModels {
+        CreateTaskViewModel.provideFactory(repository)
+    }
+    private lateinit var binding: ActivityCreateTaskBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val binding = ActivityCreateTaskBinding.inflate(layoutInflater)
+        binding = ActivityCreateTaskBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Get repository
-        val repository = Repository.provideRepository(this)
-        viewModel = CreateTaskViewModel(repository)
-
         // Bind to activity_create_task.xml
-        val titleInput = binding.etTitle
-        val descriptionInput = binding.etDescription
         val startInput = binding.etStart
         var startTimeInMillis = 0L
         val endInput = binding.etEnd
@@ -43,90 +43,36 @@ class CreateTaskActivity : AppCompatActivity() {
             endInput.setText(sdf.format(Date(endTimeInMillis)))
         }
 
-        // Pick start time
+        // Pick tart time
         startInput.setOnClickListener {
-            val now = Calendar.getInstance()
-            DatePickerDialog(
-                this,
-                { _, y, m, d ->
-                    TimePickerDialog(this, { _, h, min ->
-                        val cal = Calendar.getInstance()
-                        cal.set(y, m, d, h, min)
-                        startTimeInMillis = cal.timeInMillis
-                        startInput.setText(
-                            SimpleDateFormat(
-                                "HH:mm dd/MM/yyyy",
-                                Locale.getDefault()
-                            ).format(cal.time)
-                        )
-                    }, now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE), true).show()
-                },
-                now.get(Calendar.YEAR),
-                now.get(Calendar.MONTH),
-                now.get(Calendar.DAY_OF_MONTH)
-            ).show()
+            pickDateTime(startInput) { startTimeInMillis = it }
         }
 
         // Pick end time
         endInput.setOnClickListener {
-            val now = Calendar.getInstance()
-            DatePickerDialog(
-                this,
-                { _, y, m, d ->
-                    TimePickerDialog(this, { _, h, min ->
-                        val cal = Calendar.getInstance()
-                        cal.set(y, m, d, h, min)
-                        endTimeInMillis = cal.timeInMillis
-                        endInput.setText(
-                            SimpleDateFormat(
-                                "HH:mm dd/MM/yyyy",
-                                Locale.getDefault()
-                            ).format(cal.time)
-                        )
-                    }, now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE), true).show()
-                },
-                now.get(Calendar.YEAR),
-                now.get(Calendar.MONTH),
-                now.get(Calendar.DAY_OF_MONTH)
-            ).show()
+            pickDateTime(endInput) { endTimeInMillis = it }
         }
 
         // Create task
+        viewModel.errorMessage.observe(this) { message ->
+            if (message != null) {
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        viewModel.taskCreated.observe(this) { success ->
+            if (success == true) finish()
+        }
+
+        // Save task
         binding.btnSave.setOnClickListener {
-            val title = titleInput.text.toString()
-            val description = descriptionInput.text.toString()
+            val title = binding.etTitle.text.toString()
+            val description = binding.etDescription.text.toString()
             val start = startTimeInMillis
             val end = endTimeInMillis
 
-            if (start == 0L) {
-                startInput.error = "Enter start time, please!"
-                return@setOnClickListener
-            }
-
-            if (end == 0L) {
-                endInput.error = "Enter end time, please!"
-                return@setOnClickListener
-            }
-
-            if (title.isEmpty()) {
-                titleInput.error = "Enter title, please!"
-                return@setOnClickListener
-            }
-
-            if (description.isEmpty()) {
-                descriptionInput.error = "Enter Description, please!"
-                return@setOnClickListener
-            }
-
-            viewModel.createTask(title, description, start, end)
-            viewModel.errorMessage.observe(this) { message ->
-                if (message != null) {
-                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            viewModel.taskCreated.observe(this) { success ->
-                if (success == true) finish() // go TasksActivity
+            if (validateInput(title, description, start, end)) {
+                viewModel.createTask(title, description, start, end)
             }
         }
 
@@ -134,5 +80,52 @@ class CreateTaskActivity : AppCompatActivity() {
         binding.btnCancel.setOnClickListener {
             finish()
         }
+    }
+
+    private fun pickDateTime(targetInput: EditText, onTimePicked: (Long) -> Unit) {
+        val now = Calendar.getInstance()
+        DatePickerDialog(
+            this,
+            { _, y, m, d ->
+                TimePickerDialog(this, { _, h, min ->
+                    val cal = Calendar.getInstance()
+                    cal.set(y, m, d, h, min)
+                    val millis = cal.timeInMillis
+                    onTimePicked(millis)
+                    targetInput.setText(
+                        SimpleDateFormat("HH:mm dd/MM/yyyy", Locale.getDefault()).format(cal.time)
+                    )
+                }, now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE), true).show()
+            },
+            now.get(Calendar.YEAR),
+            now.get(Calendar.MONTH),
+            now.get(Calendar.DAY_OF_MONTH)
+        ).show()
+    }
+
+    private fun validateInput(
+        title: String,
+        description: String,
+        start: Long,
+        end: Long
+    ): Boolean {
+        var isValid = true
+        if (title.isEmpty()) {
+            binding.etTitle.error = "Enter title, please!"
+            isValid = false
+        }
+        if (description.isEmpty()) {
+            binding.etDescription.error = "Enter description, please!"
+            isValid = false
+        }
+        if (start == 0L) {
+            binding.etStart.error = "Enter start time, please!"
+            isValid = false
+        }
+        if (end == 0L) {
+            binding.etEnd.error = "Enter end time, please!"
+            isValid = false
+        }
+        return isValid
     }
 }

@@ -49,9 +49,9 @@ class TaskAdapter(
             }
 
             // Edit Button
-            binding.editButton.setOnClickListener {
+            /*binding.editButton.setOnClickListener {
                 onDetailClick(task)
-            }
+            }*/
 
             // Task preview
             binding.linearTextGroup.setOnClickListener {

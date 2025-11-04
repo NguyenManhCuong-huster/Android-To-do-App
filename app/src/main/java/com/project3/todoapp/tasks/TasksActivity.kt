@@ -3,6 +3,7 @@ package com.project3.todoapp.tasks
 import android.content.Intent
 import android.os.Bundle
 import android.widget.PopupMenu
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -16,18 +17,17 @@ import com.project3.todoapp.taskdetail.TaskDetailActivity
 import kotlinx.coroutines.launch
 
 class TasksActivity : AppCompatActivity() {
-    private lateinit var viewModel: TasksViewModel
     private lateinit var adapter: TaskAdapter
     private lateinit var binding: ActivityTasksBinding
+    private val repository by lazy { Repository.provideRepository(this) }
+    private val viewModel: TasksViewModel by viewModels {
+        TasksViewModel.provideFactory(repository)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityTasksBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        // Data Source
-        val repository = Repository.provideRepository(this)
-        viewModel = TasksViewModel(repository)
 
         // Setup RecyclerView
         val recyclerView = binding.recyclerView
