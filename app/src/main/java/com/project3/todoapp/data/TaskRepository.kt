@@ -3,7 +3,7 @@ package com.project3.todoapp.data
 import kotlinx.coroutines.flow.Flow
 
 interface TaskRepository {
-    suspend fun createTask(title: String, description: String, start: Long, end: Long)
+    suspend fun createTask(title: String, description: String, start: Long, end: Long): String
 
     suspend fun updateTask(
         taskId: String,

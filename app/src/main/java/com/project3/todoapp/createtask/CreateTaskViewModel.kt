@@ -4,9 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewModelScope
 import com.project3.todoapp.data.TaskRepository
-import kotlinx.coroutines.launch
 
 class CreateTaskViewModel(
     private val repository: TaskRepository
@@ -17,16 +15,14 @@ class CreateTaskViewModel(
     private val _taskCreated = MutableLiveData<Boolean>()
     val taskCreated: LiveData<Boolean> = _taskCreated
 
-    fun createTask(title: String, description: String, start: Long, end: Long) {
+    suspend fun createTask(title: String, description: String, start: Long, end: Long): String? {
         if (start > end) {
             _errorMessage.value = "Start time must be before end time"
             _taskCreated.value = false
-            return
+            return null
         }
-        viewModelScope.launch {
-            repository.createTask(title, description, start, end)
-            _taskCreated.value = true
-        }
+        _taskCreated.value = true
+        return repository.createTask(title, description, start, end)
     }
 
     companion object {

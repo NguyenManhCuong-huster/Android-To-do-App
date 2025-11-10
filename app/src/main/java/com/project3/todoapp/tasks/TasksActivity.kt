@@ -13,6 +13,7 @@ import com.project3.todoapp.R
 import com.project3.todoapp.Repository
 import com.project3.todoapp.createtask.CreateTaskActivity
 import com.project3.todoapp.databinding.ActivityTasksBinding
+import com.project3.todoapp.notification.checkAndRequestPermissions
 import com.project3.todoapp.taskdetail.TaskDetailActivity
 import kotlinx.coroutines.launch
 
@@ -28,6 +29,7 @@ class TasksActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityTasksBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        checkAndRequestPermissions(this@TasksActivity)
 
         // Setup RecyclerView
         val recyclerView = binding.recyclerView

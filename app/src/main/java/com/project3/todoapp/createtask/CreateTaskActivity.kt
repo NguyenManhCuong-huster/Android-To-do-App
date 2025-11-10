@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.project3.todoapp.Repository
 import com.project3.todoapp.databinding.ActivityCreateTaskBinding
+import com.project3.todoapp.notification.scheduleTaskNotification
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -53,7 +54,7 @@ class CreateTaskActivity : AppCompatActivity() {
             pickDateTime(endInput) { endTimeInMillis = it }
         }
 
-        // Create task
+        // Create and save task
         viewModel.errorMessage.observe(this) { message ->
             if (message != null) {
                 Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
@@ -64,7 +65,6 @@ class CreateTaskActivity : AppCompatActivity() {
             if (success == true) finish()
         }
 
-        // Save task
         binding.btnSave.setOnClickListener {
             val title = binding.etTitle.text.toString()
             val description = binding.etDescription.text.toString()
@@ -72,7 +72,14 @@ class CreateTaskActivity : AppCompatActivity() {
             val end = endTimeInMillis
 
             if (validateInput(title, description, start, end)) {
-                viewModel.createTask(title, description, start, end)
+                lifecycleScope.launch {
+                    val id = viewModel.createTask(title, description, start, end)
+                    if (id != null)
+                        scheduleTaskNotification(
+                            this@CreateTaskActivity,
+                            id, title, description, start
+                        )
+                }
             }
         }
 

@@ -12,12 +12,18 @@ class DefaultTaskRepository(
     val localDataSource: TaskDAO,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : TaskRepository {
-    override suspend fun createTask(title: String, description: String, start: Long, end: Long) {
+    override suspend fun createTask(
+        title: String,
+        description: String,
+        start: Long,
+        end: Long
+    ): String {
         val taskId = withContext(dispatcher) {
             UUID.randomUUID().toString()
         }
         val task = Task(taskId, title, description, start = start, end = end)
         localDataSource.upsertTask(task.toLocal())
+        return taskId
     }
 
     override suspend fun updateTask(
