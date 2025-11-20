@@ -10,10 +10,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.project3.todoapp.R
-import com.project3.todoapp.Repository
 import com.project3.todoapp.createtask.CreateTaskActivity
+import com.project3.todoapp.data.Repository
 import com.project3.todoapp.databinding.ActivityTasksBinding
-import com.project3.todoapp.notification.checkAndRequestPermissions
+import com.project3.todoapp.notification.NotificationUtils
 import com.project3.todoapp.taskdetail.TaskDetailActivity
 import kotlinx.coroutines.launch
 
@@ -22,14 +22,17 @@ class TasksActivity : AppCompatActivity() {
     private lateinit var binding: ActivityTasksBinding
     private val repository by lazy { Repository.provideRepository(this) }
     private val viewModel: TasksViewModel by viewModels {
-        TasksViewModel.provideFactory(repository)
+        TasksViewModel.provideFactory(
+            repository,
+            application
+        )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        NotificationUtils.checkAndRequestPermissions(this)
         binding = ActivityTasksBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        checkAndRequestPermissions(this@TasksActivity)
 
         // Setup RecyclerView
         val recyclerView = binding.recyclerView

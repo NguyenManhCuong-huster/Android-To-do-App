@@ -8,7 +8,7 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.project3.todoapp.Repository
+import com.project3.todoapp.data.Repository
 import com.project3.todoapp.databinding.ActivityTaskDetailBinding
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -20,7 +20,10 @@ class TaskDetailActivity : AppCompatActivity() {
 
     private val repository by lazy { Repository.provideRepository(this) }
     private val viewModel: TaskDetailViewModel by viewModels {
-        TaskDetailViewModel.provideFactory(repository)
+        TaskDetailViewModel.provideFactory(
+            repository,
+            application
+        )
     }
     private lateinit var binding: ActivityTaskDetailBinding
 

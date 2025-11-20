@@ -1,8 +1,7 @@
-package com.project3.todoapp
+package com.project3.todoapp.data
 
 import android.content.Context
 import androidx.room.Room
-import com.project3.todoapp.data.DefaultTaskRepository
 import com.project3.todoapp.data.local.ToDoDatabase
 
 object Repository {

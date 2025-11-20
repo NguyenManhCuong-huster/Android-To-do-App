@@ -8,9 +8,8 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.project3.todoapp.Repository
+import com.project3.todoapp.data.Repository
 import com.project3.todoapp.databinding.ActivityCreateTaskBinding
-import com.project3.todoapp.notification.scheduleTaskNotification
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -21,7 +20,10 @@ class CreateTaskActivity : AppCompatActivity() {
 
     private val repository by lazy { Repository.provideRepository(this) }
     private val viewModel: CreateTaskViewModel by viewModels {
-        CreateTaskViewModel.provideFactory(repository)
+        CreateTaskViewModel.provideFactory(
+            repository,
+            application
+        )
     }
     private lateinit var binding: ActivityCreateTaskBinding
 
@@ -72,14 +74,7 @@ class CreateTaskActivity : AppCompatActivity() {
             val end = endTimeInMillis
 
             if (validateInput(title, description, start, end)) {
-                lifecycleScope.launch {
-                    val id = viewModel.createTask(title, description, start, end)
-                    if (id != null)
-                        scheduleTaskNotification(
-                            this@CreateTaskActivity,
-                            id, title, description, start
-                        )
-                }
+                viewModel.createTask(title, description, start, end)
             }
         }
 

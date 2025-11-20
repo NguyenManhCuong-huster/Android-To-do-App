@@ -1,5 +1,6 @@
 package com.project3.todoapp.tasks
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -18,6 +19,7 @@ class TaskAdapter(
 
     private var tasks: List<Task> = emptyList()
 
+    @SuppressLint("NotifyDataSetChanged")
     fun submitList(newList: List<Task>) {
         tasks = newList
         notifyDataSetChanged()
@@ -47,11 +49,6 @@ class TaskAdapter(
             binding.deleteButton.setOnClickListener {
                 onDeleteClick(task)
             }
-
-            // Edit Button
-            /*binding.editButton.setOnClickListener {
-                onDetailClick(task)
-            }*/
 
             // Task preview
             binding.linearTextGroup.setOnClickListener {
