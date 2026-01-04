@@ -22,7 +22,9 @@ interface TaskRepository {
     fun getTasksStream(): Flow<List<Task>>
 
     suspend fun getTasks(): List<Task>
+
     suspend fun deleteAllTasks()
 
+    suspend fun sync()
 
 }

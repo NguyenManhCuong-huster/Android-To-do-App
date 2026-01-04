@@ -7,5 +7,6 @@ data class Task(
     val description: String,
     var isCompleted: Boolean = false,
     val start: Long,
-    val end: Long
+    val end: Long,
+    val modTime: Long
 )

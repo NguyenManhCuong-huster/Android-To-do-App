@@ -39,6 +39,20 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/DEPENDENCIES"
+            excludes += "/META-INF/LICENSE"
+            excludes += "/META-INF/LICENSE.txt"
+            excludes += "/META-INF/license.txt"
+            excludes += "/META-INF/NOTICE"
+            excludes += "/META-INF/NOTICE.txt"
+            excludes += "/META-INF/notice.txt"
+            excludes += "/META-INF/ASL2.0"
+            excludes += "/META-INF/*.kotlin_module"
+        }
+    }
 }
 
 dependencies {
@@ -48,24 +62,35 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+
+    // Navigation
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
+    
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    // ✅ Room Database
+    // Room Database
     implementation(libs.androidx.room.runtime)
-    ksp (libs.androidx.room.compiler)
-    implementation (libs.room.ktx)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.room.ktx)
 
-    // ViewModel và lifecycle cơ bản
+    // ViewModel and lifecycle
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
 
-    // (Tùy chọn) Dành cho LiveData nếu bạn dùng
-    implementation (libs.androidx.lifecycle.livedata.ktx)
+    // LiveData
+    implementation(libs.androidx.lifecycle.livedata.ktx)
 
-    // (Tùy chọn) Dành cho runtime components
-    implementation (libs.androidx.lifecycle.runtime.ktx)
+    // Runtime components
+    implementation(libs.androidx.lifecycle.runtime.ktx)
 
+    // Google Sign-In
+    implementation(libs.play.services.auth)
+
+    // Google Drive API
+    implementation(libs.google.api.client.android)
+    implementation(libs.google.oauth.client.jetty)
+    implementation(libs.google.api.services.drive)
+    implementation(libs.google.api.client.android)
 }

@@ -8,7 +8,7 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.project3.todoapp.data.Repository
+import com.project3.todoapp.TodoApplication
 import com.project3.todoapp.databinding.ActivityCreateTaskBinding
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -17,12 +17,11 @@ import java.util.Date
 import java.util.Locale
 
 class CreateTaskActivity : AppCompatActivity() {
-
-    private val repository by lazy { Repository.provideRepository(this) }
     private val viewModel: CreateTaskViewModel by viewModels {
+        val appContainer = (application as TodoApplication).container
         CreateTaskViewModel.provideFactory(
-            repository,
-            application
+            repository = appContainer.taskRepository,
+            taskNotificationManager = appContainer.notificationManager
         )
     }
     private lateinit var binding: ActivityCreateTaskBinding

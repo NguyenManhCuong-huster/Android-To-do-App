@@ -29,6 +29,20 @@
 
         />
 
+    
+    <ImageView
+        android:id="@+id/authButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_account"
+        android:contentDescription="Account"
+        app:tint="@color/light_blue_600"
+        android:padding="8dp"
+
+        app:layout_constraintEnd_toStartOf="@id/filterButton"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="@id/guideLine" />
+
     <ImageView
         android:id="@+id/filterButton"
         android:layout_width="wrap_content"

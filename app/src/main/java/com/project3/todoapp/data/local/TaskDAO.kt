@@ -2,6 +2,7 @@ package com.project3.todoapp.data.local
 
 import androidx.room.Dao
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
@@ -13,10 +14,6 @@ interface TaskDAO {
 
     @Query("SELECT * FROM task")
     suspend fun getAll(): List<LocalTask>
-
-    //Delete all Tasks
-    @Query("DELETE FROM task")
-    suspend fun deleteAll()
 
     //Insert or Update
     @Upsert
@@ -33,5 +30,16 @@ interface TaskDAO {
     @Query("DELETE FROM task WHERE id = :taskId")
     suspend fun deleteById(taskId: String): Int
 
+    //Delete all tasks
+    @Query("DELETE FROM task")
+    suspend fun deleteAll()
 
+    @Upsert
+    suspend fun upsertAll(tasks: List<LocalTask>)
+
+    @Transaction
+    suspend fun syncTasks(tasks: List<LocalTask>) {
+        deleteAll()
+        upsertAll(tasks)
+    }
 }
