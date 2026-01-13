@@ -34,7 +34,7 @@ class TasksActivity : AppCompatActivity() {
         )
     }
 
-    // 1. Bộ xử lý kết quả đăng nhập
+    // Bộ xử lý kết quả đăng nhập
     private val signInLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
@@ -69,7 +69,12 @@ class TasksActivity : AppCompatActivity() {
         binding.recyclerView.adapter = adapter
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
 
-        // Auth Button (Nút tài khoản mới)
+        // Sync Button
+        binding.syncButton.setOnClickListener {
+            viewModel.syncData()
+        }
+
+        // Auth Button
         binding.authButton.setOnClickListener {
             showAuthMenu()
         }
@@ -95,7 +100,7 @@ class TasksActivity : AppCompatActivity() {
         }
     }
 
-    // 2. Hàm cập nhật màu sắc nút tài khoản
+    // Hàm cập nhật màu sắc nút tài khoản
     private fun updateAuthButtonUI() {
         val authManager = (application as TodoApplication).container.authManager
         val color = if (authManager.isUserLoggedIn()) {
@@ -107,7 +112,7 @@ class TasksActivity : AppCompatActivity() {
         binding.authButton.imageTintList = ColorStateList.valueOf(color)
     }
 
-    // 3. Hiển thị Menu Đăng nhập/Đăng xuất
+    // Hiển thị Menu Đăng nhập/Đăng xuất
     private fun showAuthMenu() {
         val popup = PopupMenu(this, binding.authButton)
         val authManager = (application as TodoApplication).container.authManager
@@ -132,6 +137,7 @@ class TasksActivity : AppCompatActivity() {
         popup.show()
     }
 
+    // Hiển th bộ lọc
     private fun showFilterMenu() {
         val popup = PopupMenu(this, binding.filterButton)
         popup.menuInflater.inflate(R.menu.filter_menu, popup.menu)

@@ -9,7 +9,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -117,28 +116,29 @@ class DefaultTaskRepository(
 
     override suspend fun sync() {
         withContext(dispatcher) {
-            val remoteTasks = networkDataSource.loadTasks().toExternal() // List<Task>
-            if (remoteTasks.isEmpty()) return@withContext
-            val localTasks = localDataSource.observeAll().first().toExternal() // List<Task>
-            val localTasksMap = localTasks.associateBy { it.id }
-            val tasksToUpsert = mutableListOf<Task>()
+            val remoteTasks = networkDataSource.loadTasks().toExternal()
+            val localTasks = localDataSource.getAll().toExternal()
 
-            //Save the task if it does not exist yet, or save the most recent edits if it does exist.
+            if (remoteTasks.isEmpty()) return@withContext
+
+            // Last write win
+            val mergedTasksMap = localTasks.associateBy { it.id }.toMutableMap()
             for (remoteTask in remoteTasks) {
-                val localTask = localTasksMap[remoteTask.id]
+                val localTask = mergedTasksMap[remoteTask.id]
 
                 if (localTask == null) {
-                    tasksToUpsert.add(remoteTask)
+                    mergedTasksMap[remoteTask.id] = remoteTask
                 } else {
                     if (remoteTask.modTime > localTask.modTime) {
-                        tasksToUpsert.add(remoteTask)
-                    } else {
-                        tasksToUpsert.add(localTask)
+                        mergedTasksMap[remoteTask.id] = remoteTask
                     }
                 }
             }
 
-            localDataSource.syncTasks(tasksToUpsert.toLocal())
+            val finalTasks = mergedTasksMap.values.toList()
+            localDataSource.syncTasks(finalTasks.toLocal())
+
+            saveTasksToNetwork()
         }
     }
 

@@ -29,7 +29,20 @@
 
         />
 
-    
+    <ImageView
+        android:id="@+id/syncButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_sync"
+        android:contentDescription="Sync"
+        app:tint="@color/light_blue_600"
+        android:padding="8dp"
+        android:layout_gravity="end"
+
+        app:layout_constraintEnd_toStartOf="@id/authButton"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="@id/guideLine" />
+
     <ImageView
         android:id="@+id/authButton"
         android:layout_width="wrap_content"
