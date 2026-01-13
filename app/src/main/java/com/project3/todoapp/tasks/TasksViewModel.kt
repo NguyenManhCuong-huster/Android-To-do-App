@@ -59,12 +59,6 @@ class TasksViewModel(
         }
     }
 
-    fun syncData() {
-        taskNotificationManager.showStatusNotification("Đang đồng bộ dữ liệu với Google Drive...")
-
-        refresh()
-    }
-
     fun refresh() {
         viewModelScope.launch {
             repository.sync()

@@ -71,7 +71,9 @@ class TasksActivity : AppCompatActivity() {
 
         // Sync Button
         binding.syncButton.setOnClickListener {
-            viewModel.syncData()
+            Toast.makeText(this, "Đang đồng bộ...", Toast.LENGTH_SHORT)
+                .show()
+            viewModel.refresh()
         }
 
         // Auth Button
