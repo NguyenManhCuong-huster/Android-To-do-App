@@ -9,6 +9,7 @@ import com.project3.todoapp.data.local.ToDoDatabase
 import com.project3.todoapp.data.network.GoogleDriveDatabase
 import com.project3.todoapp.data.network.NetworkDataSource
 import com.project3.todoapp.network.NetworkManager
+import com.project3.todoapp.notification.PermissionManager
 import com.project3.todoapp.notification.TaskNotificationManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -56,10 +57,14 @@ class AppContainer(val context: Context) {
     }
 
     // --- 2. NOTIFICATION ---
-
     val notificationManager: TaskNotificationManager by lazy {
         TaskNotificationManager(context, applicationScope).apply {
             createNotificationChannels()
         }
+    }
+
+    // --- 3. PERMISSION
+    val permissionManager: PermissionManager by lazy {
+        PermissionManager(context)
     }
 }

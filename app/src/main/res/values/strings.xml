@@ -1,5 +1,48 @@
 <resources>
     <string name="app_name">Todo App</string>
 
+    <!-- Tasks activity -->
     <string name="task_time_format">%1$s → %2$s</string>
+    <string name="notifi_login_success">Đăng nhập thành công, đang đồng bộ…</string>
+    <string name="notifi_sync_starting">Đang đồng bộ…</string>
+    <string name="logout">Đăng xuất (%1$s)</string>
+    <string name="notifi_logged_out">" Đã đăng xuất"</string>
+    <string name="login">Đăng nhập Google Drive</string>
+    <!-- xml -->
+    <string name="sync_button_desc">Sync</string>
+    <string name="acc_button_desc">Account</string>
+    <string name="filter_button_desc">Filter</string>
+    <string name="add_task_button_desc">Add task</string>
+
+    <!-- Task detail activity & Create task acticity-->
+    <string name="notifi_null_title">Làm ơn không để trống tiêu đề!!!</string>
+    <string name="notifi_null_description">Làm ơn không để trống mô tả!!!</string>
+    <string name="notifi_null_start_time">Hãy bắt đầu vào lúc nào đó!!!</string>
+    <string name="notifi_null_end_time">Không kết thúc à ?</string>
+    <!-- xml -->
+    <string name="tv_start_time">Bắt đầu:</string>
+    <string name="tv_end_time">Kết thúc:</string>
+    <string name="enter_start_time">Ngày bắt đầu</string>
+    <string name="enter_end_time">Ngày kết thúc</string>
+    <string name="cancel_button_desc">Hủy</string>
+    <string name="save_task_button_desc">Lưu</string>
+    <string name="task_title">Tiêu đề</string>
+    <string name="enter_title">Nhập tiêu đề</string>
+    <string name="task_description">Mô tả công việc</string>
+    <string name="enter_description">Nhập mô tả công việc</string>
+
+    <!-- Permission helper -->
+    <string name="notification_permission">Quyền thông báo</string>
+    <string name="ask_notification_setting">Ứng dụng cần quyền thông báo để nhắc nhở công việc. Bạn có muốn mở cài đặt không?</string>
+    <string name="schedule_exact_alarm_permission">Quyền báo thức chính xác</string>
+    <string name="ask_schedule_exact_alarm_permission">Để nhắc nhở đúng giây, ứng dụng cần quyền báo thức chính xác. Mở cài đặt?</string>
+    <!-- Check box -->
+    <string name="do_not_ask">Không hỏi lại lần sau</string>
+    <string name="setting">Cài đặt</string>
+    <string name="not_now">Để sau</string>
+
+    <!-- Task alarm receiver -->
+    <string name="task_reminder">Nhắc việc</string>
+    <string name="task_reminder_message">Đã đến giờ làm việc!</string>
+
 </resources>

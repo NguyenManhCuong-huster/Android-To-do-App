@@ -19,7 +19,6 @@ import com.project3.todoapp.R
 import com.project3.todoapp.TodoApplication
 import com.project3.todoapp.createtask.CreateTaskActivity
 import com.project3.todoapp.databinding.ActivityTasksBinding
-import com.project3.todoapp.notification.PermissionHelper
 import com.project3.todoapp.taskdetail.TaskDetailActivity
 import kotlinx.coroutines.launch
 
@@ -40,14 +39,15 @@ class TasksActivity : AppCompatActivity() {
             if (result.resultCode == Activity.RESULT_OK) {
                 updateAuthButtonUI()
                 viewModel.refresh() // Đăng nhập xong thì bắt đầu đồng bộ ngay
-                Toast.makeText(this, "Đăng nhập thành công, đang đồng bộ...", Toast.LENGTH_SHORT)
+                Toast.makeText(this, getString(R.string.notifi_login_success), Toast.LENGTH_SHORT)
                     .show()
             }
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        PermissionHelper.checkAndRequestPermissions(this)
+        val container = (application as TodoApplication).container
+        container.permissionManager.checkAndRequestPermissions(this)
         binding = ActivityTasksBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -71,7 +71,7 @@ class TasksActivity : AppCompatActivity() {
 
         // Sync Button
         binding.syncButton.setOnClickListener {
-            Toast.makeText(this, "Đang đồng bộ...", Toast.LENGTH_SHORT)
+            Toast.makeText(this, getString(R.string.notifi_sync_starting), Toast.LENGTH_SHORT)
                 .show()
             viewModel.refresh()
         }
@@ -121,16 +121,17 @@ class TasksActivity : AppCompatActivity() {
 
         if (authManager.isUserLoggedIn()) {
             val account = authManager.getGoogleAccount()
-            popup.menu.add(Menu.NONE, 1, 1, "Đăng xuất (${account?.email})")
+            popup.menu.add(Menu.NONE, 1, 1, getString(R.string.logout, account?.email))
             popup.setOnMenuItemClickListener {
                 authManager.signOut {
                     updateAuthButtonUI()
-                    Toast.makeText(this, " Đã đăng xuất", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.notifi_logged_out), Toast.LENGTH_SHORT)
+                        .show()
                 }
                 true
             }
         } else {
-            popup.menu.add(Menu.NONE, 2, 2, "Đăng nhập Google Drive")
+            popup.menu.add(Menu.NONE, 2, 2, getString(R.string.login))
             popup.setOnMenuItemClickListener {
                 signInLauncher.launch(authManager.getSignInIntent())
                 true

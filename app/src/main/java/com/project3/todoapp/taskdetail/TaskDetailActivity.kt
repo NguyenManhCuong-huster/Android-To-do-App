@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.project3.todoapp.R
 import com.project3.todoapp.TodoApplication
 import com.project3.todoapp.databinding.ActivityTaskDetailBinding
 import kotlinx.coroutines.launch
@@ -125,19 +126,19 @@ class TaskDetailActivity : AppCompatActivity() {
     ): Boolean {
         var isValid = true
         if (title.isEmpty()) {
-            binding.etTitle.error = "Enter title, please!"
+            binding.etTitle.error = getString(R.string.notifi_null_title)
             isValid = false
         }
         if (description.isEmpty()) {
-            binding.etDescription.error = "Enter description, please!"
+            binding.etDescription.error = getString(R.string.notifi_null_description)
             isValid = false
         }
         if (start == 0L) {
-            binding.etStart.error = "Enter start time, please!"
+            binding.etStart.error = getString(R.string.notifi_null_start_time)
             isValid = false
         }
         if (end == 0L) {
-            binding.etEnd.error = "Enter end time, please!"
+            binding.etEnd.error = getString(R.string.notifi_null_end_time)
             isValid = false
         }
         return isValid

@@ -9,8 +9,9 @@ import com.project3.todoapp.R
 
 class TaskAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        val title = intent.getStringExtra("title") ?: "Nhắc việc"
-        val message = intent.getStringExtra("message") ?: "Đã đến giờ làm việc!"
+        val title = intent.getStringExtra("title") ?: context.getString(R.string.task_reminder)
+        val message =
+            intent.getStringExtra("message") ?: context.getString(R.string.task_reminder_message)
         val taskId = intent.getStringExtra("taskId") ?: ""
 
         val builder = NotificationCompat.Builder(context, "task_channel")
