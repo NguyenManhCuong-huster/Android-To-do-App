@@ -1,5 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/nav_graph">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.project3.todoapp.HomeFragment"
+        android:label="Home"
+        tools:layout="@layout/fragment_home">
+        <action
+            android:id="@+id/home_to_health"
+            app:destination="@id/healthActivity" />
+        <action
+            android:id="@+id/home_to_tasks"
+            app:destination="@id/tasksActivity" />
+    </fragment>
+
+    <activity
+        android:id="@+id/tasksActivity"
+        android:name="com.project3.todoapp.ui.tasks.TasksActivity"
+        android:label="Tasks"
+        tools:layout="@layout/activity_tasks" />
+
+    <activity
+        android:id="@+id/healthActivity"
+        android:name="com.project3.todoapp.HealthActivity"
+        android:label="Health"
+        tools:layout="@layout/activity_health" />
 
 </navigation>

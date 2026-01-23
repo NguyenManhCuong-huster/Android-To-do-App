@@ -10,4 +10,14 @@
     <color name="red">#F44336</color>
     <color name="light_gray">#E2E2E2</color>
 
+    <!-- Màu Priority -->
+    <color name="priority_low">#4CAF50</color>     <!-- Xanh lá -->
+    <color name="priority_medium">#FFC107</color>  <!-- Vàng/Cam nhạt -->
+    <color name="priority_high">#FF9800</color>    <!-- Cam -->
+    <color name="priority_urgent">#F44336</color>  <!-- Đỏ -->
+
+    <!-- Màu nền Tag -->
+    <color name="tag_background">#E0E0E0</color>
+    <color name="tag_text">#333333</color>
+
 </resources>

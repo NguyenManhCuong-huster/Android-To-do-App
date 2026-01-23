@@ -30,6 +30,12 @@
     <string name="enter_title">Nhập tiêu đề</string>
     <string name="task_description">Mô tả công việc</string>
     <string name="enter_description">Nhập mô tả công việc</string>
+    <string-array name="priorities">
+        <item>Low</item>
+        <item>Medium</item>
+        <item>High</item>
+        <item>Urgent</item>
+    </string-array>
 
     <!-- Permission helper -->
     <string name="notification_permission">Quyền thông báo</string>

@@ -22,18 +22,28 @@
             android:exported="false" />
 
         <activity
-            android:name=".taskdetail.TaskDetailActivity"
+            android:name=".ui.taskdetail.TaskDetailActivity"
             android:exported="false"
             android:theme="@style/Theme.TodoApp" />
         <activity
-            android:name=".createtask.CreateTaskActivity"
+            android:name=".ui.createtask.CreateTaskActivity"
             android:exported="false"
             android:theme="@style/Theme.TodoApp" />
         <activity
-            android:name=".tasks.TasksActivity"
+            android:name=".ui.tasks.TasksActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:exported="false"
             android:theme="@style/Theme.TodoApp.Fullscreen" />
+        <activity
+            android:name=".ui.tag.TagsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.TodoApp" />
+
+        <activity
+            android:name=".HealthActivity"
+            android:exported="false"
+            android:theme="@style/Theme.TodoApp" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">

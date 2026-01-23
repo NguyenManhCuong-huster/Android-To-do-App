@@ -80,31 +80,31 @@
         app:layout_constraintEnd_toStartOf="@id/btnCancel"
         app:layout_constraintTop_toBottomOf="@id/etStart" />
 
-    <ImageButton
+    <ImageView
         android:id="@+id/btnCancel"
         android:layout_width="48dp"
         android:layout_height="48dp"
+        android:padding="4dp"
 
         android:src="@drawable/ic_cancel"
         app:tint="@color/red"
         android:background="@android:color/transparent"
         android:contentDescription="@string/cancel_button_desc"
-        android:scaleType="center"
 
         app:layout_constraintEnd_toStartOf="@id/btnSave"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@id/barrierEnd" />
 
-    <ImageButton
+    <ImageView
         android:id="@+id/btnSave"
         android:layout_width="48dp"
         android:layout_height="48dp"
+        android:padding="4dp"
 
         android:src="@drawable/ic_done"
         app:tint="@color/light_blue_600"
         android:background="@android:color/transparent"
         android:contentDescription="@string/save_task_button_desc"
-        android:scaleType="center"
 
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -119,15 +119,149 @@
         app:constraint_referenced_ids="etEnd" />
 
     <TextView
+        android:id="@+id/tvLocation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Location"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/etEnd" />
+
+    <EditText
+        android:id="@+id/etLocation"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:background="@drawable/task_border"
+        android:drawableStart="@drawable/ic_location_on"
+        android:drawablePadding="8dp"
+        android:gravity="center_vertical"
+        android:hint="Enter location (Coming soon)"
+        android:paddingStart="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvLocation" />
+
+    <TextView
+        android:id="@+id/tvPriority"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="Priority"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/etLocation" />
+
+    <RadioGroup
+        android:id="@+id/rgPriority"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="4"
+        android:layout_marginTop="4dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvPriority">
+
+        <RadioButton
+            android:id="@+id/rbLow"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Low"
+            android:buttonTint="@color/priority_low"
+            android:textColor="@color/priority_low"
+            android:textSize="12sp" />
+
+        <RadioButton
+            android:id="@+id/rbMedium"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Med"
+            android:checked="true"
+            android:buttonTint="@color/priority_medium"
+            android:textColor="@color/priority_medium"
+            android:textSize="12sp" />
+
+        <RadioButton
+            android:id="@+id/rbHigh"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="High"
+            android:buttonTint="@color/priority_high"
+            android:textColor="@color/priority_high"
+            android:textSize="12sp" />
+
+        <RadioButton
+            android:id="@+id/rbUrgent"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Urgent"
+            android:buttonTint="@color/priority_urgent"
+            android:textColor="@color/priority_urgent"
+            android:textSize="12sp" />
+    </RadioGroup>
+
+    <!-- 2. Phần Chọn Tag -->
+    <TextView
+        android:id="@+id/tvTags"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="Tags"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/rgPriority" />
+
+    <LinearLayout
+        android:id="@+id/layoutTagSelection"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvTags">
+
+        <!-- Nút bấm để mở Dialog chọn Tag -->
+        <ImageView
+            android:id="@+id/btnAddTag"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_add"
+            app:tint="@color/light_blue_600"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="4dp" />
+
+        <!-- Vùng hiển thị các Tag đã chọn -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/selectedTagsContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingStart="8dp" />
+        </HorizontalScrollView>
+    </LinearLayout>
+
+
+    <!-- Sửa lại ràng buộc của tvTitle để nằm dưới layoutTagSelection -->
+    <TextView
         android:id="@+id/tvTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginVertical="4dp"
         android:text="@string/task_title"
         android:textSize="24sp"
-        android:layout_marginVertical="4dp"
-
-        app:layout_constraintTop_toBottomOf="@id/barrierEnd"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layoutTagSelection" />
 
     <EditText
         android:id="@+id/etTitle"

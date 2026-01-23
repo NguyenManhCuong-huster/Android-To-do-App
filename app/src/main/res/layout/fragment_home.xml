@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <ImageView
+        android:id="@+id/btnGoToHealth"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:padding="8dp"
+        app:tint="@color/light_blue_600"
+        android:src="@drawable/frag_home_ic_health"
+        android:contentDescription="Go to Health"
+
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btnGoToTasks" />
+
+    <ImageView
+        android:id="@+id/btnGoToTasks"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:padding="8dp"
+        android:src="@drawable/frag_home_ic_task"
+        android:contentDescription="Go to Tasks"
+        app:tint="@color/light_blue_600"
+
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/btnGoToHealth" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
