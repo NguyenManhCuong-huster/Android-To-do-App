@@ -85,7 +85,7 @@ class TaskAdapter(
 
                 for (tag in task.tags) {
                     val tagItemView = inflater.inflate(
-                        R.layout.item_tag,
+                        R.layout.tag_layout_in_task_layout,
                         binding.tagsContainer,
                         false
                     )

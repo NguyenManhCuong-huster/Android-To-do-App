@@ -23,16 +23,20 @@ class TagsAdapter(
 
     inner class TagViewHolder(val binding: TagLayoutBinding) :
         RecyclerView.ViewHolder(binding.root) {
+
         fun bind(tag: Tag) {
             binding.tvTagName.text = tag.tagName
 
             try {
                 val color = tag.colorHex.toColorInt()
-                val background = binding.viewColor.background as? GradientDrawable
+                val background = binding.root.background as? GradientDrawable
                 background?.mutate()
-                background?.setColor(color)
+
+                // Set border màu theo tag
+                val strokeWidth =
+                    (2 * binding.root.context.resources.displayMetrics.density).toInt()
+                background?.setStroke(strokeWidth, color)
             } catch (e: Exception) {
-                // Default color
             }
 
             binding.btnDelete.setOnClickListener {

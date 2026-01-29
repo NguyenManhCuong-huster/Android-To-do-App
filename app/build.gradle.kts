@@ -66,7 +66,7 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
-    
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -93,4 +93,6 @@ dependencies {
     implementation(libs.google.oauth.client.jetty)
     implementation(libs.google.api.services.drive)
     implementation(libs.google.api.client.android)
+
+    implementation(libs.flexbox)
 }

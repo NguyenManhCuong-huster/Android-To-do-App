@@ -85,7 +85,7 @@ class DefaultTaskRepository(
     }
 
     override suspend fun getTask(taskId: String): Task? {
-        return localDataSource.getTaskById(taskId)?.toExternal()
+        return localDataSource.getTaskWithTagsById(taskId)?.toExternal()
     }
 
     override suspend fun deleteTask(taskId: String) {

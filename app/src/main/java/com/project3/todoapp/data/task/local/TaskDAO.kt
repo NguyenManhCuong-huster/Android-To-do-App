@@ -48,6 +48,10 @@ interface TaskDAO {
     fun getTasksForTag(tagId: String): Flow<List<LocalTask>>
 
     @Transaction
+    @Query("SELECT * FROM task WHERE id = :taskId")
+    suspend fun getTaskWithTagsById(taskId: String): LocalTaskWithTags?
+
+    @Transaction
     @Query("SELECT * FROM task ORDER BY start ASC")
     fun observeTasksWithTags(): Flow<List<LocalTaskWithTags>>
 
