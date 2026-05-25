@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    item_calendar_day.xml
+    Structure (top-to-bottom, all centered):
+      tvDayName   — "Mon", "Tue"... (small, gray)
+      flDayCircle — 36×36 FrameLayout whose background changes:
+                     • selected  → bg_selected_day  (filled teal circle)
+                     • today     → bg_today_day      (teal border circle)
+                     • other     → null
+          tvDayNumber — day of month inside the circle
+      tvTaskCount — "3" task badge, invisible when 0
+
+    THAY ĐỔI 2026-05-08:
+      Đổi root layout_width từ wrap_content → match_parent.
+      Lý do: rvCalendar giờ dùng GridLayoutManager(7) (mỗi cell = 1/7 width của
+      RecyclerView). Item phải fill cell — wrap_content sẽ co lại quanh "Mon"
+      khiến 7 ô không căn đều.
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingHorizontal="2dp"
+    android:paddingVertical="8dp">
+
+    <!-- Day name: Mon, Tue... -->
+    <TextView
+        android:id="@+id/tvDayName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:text="Mon"
+        android:textColor="#888888"
+        android:textSize="11sp" />
+
+    <!-- Circle container — background set programmatically -->
+    <FrameLayout
+        android:id="@+id/flDayCircle"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginTop="4dp">
+
+        <TextView
+            android:id="@+id/tvDayNumber"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:text="15"
+            android:textColor="#333333"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+    </FrameLayout>
+
+    <!-- Task count badge — INVISIBLE (not GONE) to keep height stable -->
+    <TextView
+        android:id="@+id/tvTaskCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:fontFamily="sans-serif-medium"
+        android:text="3"
+        android:textColor="#0DC7D0"
+        android:textSize="10sp"
+        android:visibility="invisible" />
+</LinearLayout>

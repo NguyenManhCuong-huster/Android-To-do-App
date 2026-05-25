@@ -7,7 +7,7 @@
     <string name="notifi_sync_starting">Đang đồng bộ…</string>
     <string name="logout">Đăng xuất (%1$s)</string>
     <string name="notifi_logged_out">" Đã đăng xuất"</string>
-    <string name="login">Đăng nhập Google Drive</string>
+    <string name="login">Đăng nhập</string>
     <!-- xml -->
     <string name="sync_button_desc">Sync</string>
     <string name="acc_button_desc">Account</string>

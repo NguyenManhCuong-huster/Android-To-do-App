@@ -1,19 +1,18 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  data_extraction_rules.xml — Android 12+ (API 31+) data extraction config.
+  Áp dụng cho cả cloud-backup (auto-backup) và device-transfer.
 -->
 <data-extraction-rules>
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <exclude domain="sharedpref" path="auth_prefs.xml" />
+        <exclude domain="sharedpref" path="server_config_prefs.xml" />
+        <exclude domain="root" path="cache" />
     </cloud-backup>
-    <!--
+
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <!-- Cho phép transfer Room database + tags + non-credential prefs. -->
+        <exclude domain="sharedpref" path="auth_prefs.xml" />
+        <exclude domain="root" path="cache" />
     </device-transfer>
-    -->
 </data-extraction-rules>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  file_paths.xml — config FileProvider cho phép share file đã download xuống
+  cacheDir/attachments/ với app khác (PDF reader, Excel viewer, ...).
+
+  Đăng ký trong AndroidManifest.xml:
+
+      <provider
+          android:name="androidx.core.content.FileProvider"
+          android:authorities="${applicationId}.fileprovider"
+          android:exported="false"
+          android:grantUriPermissions="true">
+          <meta-data
+              android:name="android.support.FILE_PROVIDER_PATHS"
+              android:resource="@xml/file_paths" />
+      </provider>
+
+  Authority phải match với AttachmentRepository.buildOpenIntent
+  ("${context.packageName}.fileprovider").
+-->
+<paths>
+    <!-- Cho phép share file đã download (cacheDir/attachments/...) -->
+    <cache-path
+        name="attachments"
+        path="attachments/" />
+
+    <!-- Optional: share file từ external cache (nếu sau này muốn lưu persistent) -->
+    <external-cache-path
+        name="external_attachments"
+        path="attachments/" />
+</paths>

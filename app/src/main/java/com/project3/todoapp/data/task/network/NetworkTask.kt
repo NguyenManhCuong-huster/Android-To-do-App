@@ -1,5 +1,14 @@
 package com.project3.todoapp.data.task.network
 
+/**
+ * NetworkTask — DTO trung gian giữa repository và Retrofit layer (TaskApi/TaskDto).
+ *
+ * Tách khỏi [TaskDto] (raw từ JSON server) để repository không phụ thuộc tên field
+ * của API, dễ test bằng fake data source.
+ *
+ * ⚠️ Field [isDeleted] cho phép client phân biệt task tombstone từ server
+ *  (server soft-delete) → repository hard-delete tương ứng ở local.
+ */
 data class NetworkTask(
     val id: String,
     val title: String,
@@ -11,5 +20,6 @@ data class NetworkTask(
     val priority: Int,
     val latitude: Double?,
     val longitude: Double?,
-    val addressName: String?
+    val addressName: String?,
+    val isDeleted: Boolean = false,
 )

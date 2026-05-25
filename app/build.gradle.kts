@@ -29,6 +29,7 @@ android {
     }
 
     buildFeatures {
+        buildConfig = true
         viewBinding = true
     }
 
@@ -94,5 +95,13 @@ dependencies {
     implementation(libs.google.api.services.drive)
     implementation(libs.google.api.client.android)
 
+    // Connect to server
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+    implementation(libs.logging.interceptor)
+    implementation(libs.androidx.security.crypto)
+
+    // UI
     implementation(libs.flexbox)
+    implementation(libs.androidx.swiperefreshlayout)
 }

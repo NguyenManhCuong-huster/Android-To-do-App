@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="32dp"
+    android:background="#F4F6F9"
+    android:orientation="vertical">
+
+    <!-- TOP BAR: Back + Title + Logout -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@android:color/white"
+        android:elevation="4dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="4dp"
+        android:paddingEnd="8dp">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Back"
+            android:src="@android:drawable/ic_menu_revert" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="sans-serif-medium"
+            android:text="Profile"
+            android:textColor="#222222"
+            android:textSize="17sp" />
+
+        <Button
+            android:id="@+id/btnLogout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Đăng xuất"
+            android:textColor="#E53935"
+            style="@style/Widget.AppCompat.Button.Borderless" />
+
+    </LinearLayout>
+
+    <!-- SCROLLABLE CONTENT -->
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefresh"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="32dp">
+
+                <!-- Loading -->
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="48dp"
+                    android:visibility="gone" />
+
+                <!-- Account email header -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@android:color/white"
+                    android:elevation="1dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="16dp">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/bg_avatar_circle"
+                        android:contentDescription="Avatar"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_account" />
+
+                    <TextView
+                        android:id="@+id/tvEmail"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:textColor="#333333"
+                        android:textSize="14sp" />
+
+                </LinearLayout>
+
+                <!-- No profile yet -->
+                <TextView
+                    android:id="@+id/tvNoProfile"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center"
+                    android:paddingHorizontal="24dp"
+                    android:text="Chưa có thông tin sinh viên.\nBấm Sửa để thêm."
+                    android:textColor="#888888"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+
+                <!-- Student info card -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="0dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@android:color/white"
+                    android:elevation="1dp"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="16dp"
+                    android:paddingTop="16dp"
+                    android:paddingBottom="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Thông tin sinh viên"
+                        android:textColor="#333333"
+                        android:textSize="14sp" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="10dp"
+                        android:background="#EEEEEE" />
+
+                    <!-- MSSV -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="MSSV"
+                        android:textColor="#555555"
+                        android:textSize="12sp" />
+
+                    <EditText
+                        android:id="@+id/etStudentId"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:enabled="false"
+                        android:hint="Mã số sinh viên"
+                        android:inputType="number"
+                        android:textSize="15sp" />
+
+                    <!-- Full name -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Họ và tên"
+                        android:textColor="#555555"
+                        android:textSize="12sp"
+                        android:layout_marginTop="8dp" />
+
+                    <EditText
+                        android:id="@+id/etFullName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:enabled="false"
+                        android:hint="Họ và tên"
+                        android:inputType="textPersonName|textCapWords"
+                        android:textSize="15sp" />
+
+                    <!-- Date of birth -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Ngày sinh"
+                        android:textColor="#555555"
+                        android:textSize="12sp"
+                        android:layout_marginTop="8dp" />
+
+                    <EditText
+                        android:id="@+id/etDateOfBirth"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:enabled="false"
+                        android:hint="YYYY-MM-DD"
+                        android:inputType="date"
+                        android:textSize="15sp" />
+
+                    <!-- Phone -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Số điện thoại"
+                        android:textColor="#555555"
+                        android:textSize="12sp"
+                        android:layout_marginTop="8dp" />
+
+                    <EditText
+                        android:id="@+id/etPhone"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:enabled="false"
+                        android:hint="0912345678"
+                        android:inputType="phone"
+                        android:textSize="15sp" />
+
+                    <!-- School -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Trường / Viện"
+                        android:textColor="#555555"
+                        android:textSize="12sp"
+                        android:layout_marginTop="8dp" />
+
+                    <EditText
+                        android:id="@+id/etSchool"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:enabled="false"
+                        android:hint="Trường CNTT &amp; Truyền thông"
+                        android:inputType="textCapSentences"
+                        android:textSize="15sp" />
+
+                    <!-- Major -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Ngành"
+                        android:textColor="#555555"
+                        android:textSize="12sp"
+                        android:layout_marginTop="8dp" />
+
+                    <EditText
+                        android:id="@+id/etMajor"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:enabled="false"
+                        android:hint="Khoa học Máy tính"
+                        android:inputType="textCapSentences"
+                        android:textSize="15sp" />
+
+                    <!-- Class name -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Lớp"
+                        android:textColor="#555555"
+                        android:textSize="12sp"
+                        android:layout_marginTop="8dp" />
+
+                    <EditText
+                        android:id="@+id/etClassName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:enabled="false"
+                        android:hint="Việt-Nhật 01 K66"
+                        android:inputType="textCapSentences"
+                        android:textSize="15sp" />
+
+                    <!-- Course -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Khóa"
+                        android:textColor="#555555"
+                        android:textSize="12sp"
+                        android:layout_marginTop="8dp" />
+
+                    <EditText
+                        android:id="@+id/etCourse"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:enabled="false"
+                        android:hint="K66"
+                        android:inputType="textCapCharacters"
+                        android:textSize="15sp" />
+
+                </LinearLayout>
+
+                <!-- Action buttons DƯỚI form -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginHorizontal="16dp"
+                    android:gravity="end"
+                    android:orientation="horizontal">
+
+                    <!-- Edit mode: OFF — chỉ hiện Sửa -->
+                    <Button
+                        android:id="@+id/btnEdit"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Sửa thông tin"
+                        android:backgroundTint="#0DC7D0"
+                        android:textColor="@android:color/white" />
+
+                    <!-- Edit mode: ON — hiện Huỷ + Lưu -->
+                    <Button
+                        android:id="@+id/btnCancel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:text="Huỷ"
+                        android:visibility="gone"
+                        style="@style/Widget.AppCompat.Button.Borderless" />
+
+                    <FrameLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone"
+                        android:id="@+id/layoutSave">
+
+                        <Button
+                            android:id="@+id/btnSave"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Lưu"
+                            android:backgroundTint="#0DC7D0"
+                            android:textColor="@android:color/white" />
+
+                        <ProgressBar
+                            android:id="@+id/progressSave"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_gravity="center"
+                            android:visibility="gone" />
+
+                    </FrameLayout>
+
+                </LinearLayout>
+
+            </LinearLayout>
+        </ScrollView>
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+</LinearLayout>

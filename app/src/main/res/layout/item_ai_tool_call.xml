@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  item_ai_tool_call.xml — card hiển thị 1 hành động AI đã thực hiện.
+
+  Layout (từ trên xuống):
+    ┌──────────────────────────────────────────────┐
+    │ ✅  Đã tạo task: Nộp báo cáo môn AI            │ icon + tvTitle
+    │     Việc cần làm • hạn 10/05 09:00            │ tvSubtitle (optional)
+    │     [Học tập]  [Quan trọng]                   │ tagsContainer (HorizontalScrollView)
+    │     (lỗi nếu fail)                            │ tvError (optional)
+    └──────────────────────────────────────────────┘
+
+  Card căn giữa với margin lớn 2 bên — phân biệt rõ với bubble message.
+  Tag chips render programmatically từ adapter (vì màu phụ thuộc data).
+-->
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="32dp"
+    android:layout_marginVertical="6dp"
+    app:cardBackgroundColor="#FFFEF7E0"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="10dp">
+
+        <!-- Row 1: icon + title -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tvIcon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="✅"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="#222222"
+                android:textSize="13sp"
+                tools:text="Đã tạo task: Nộp báo cáo môn AI" />
+        </LinearLayout>
+
+        <!-- Subtitle (loại + deadline) -->
+        <TextView
+            android:id="@+id/tvSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="2dp"
+            android:textColor="#666666"
+            android:textSize="11sp"
+            android:visibility="gone"
+            tools:text="Việc cần làm • hạn 10/05 09:00"
+            tools:visibility="visible" />
+
+        <!-- Tag chips (HorizontalScrollView để chứa nhiều tag không bị tràn) -->
+        <HorizontalScrollView
+            android:id="@+id/tagsScroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="6dp"
+            android:scrollbars="none"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:id="@+id/tagsContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
+        <!-- Error message -->
+        <TextView
+            android:id="@+id/tvError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="4dp"
+            android:textColor="#C62828"
+            android:textSize="11sp"
+            android:visibility="gone"
+            tools:text="Thiếu title — không thể tạo task."
+            tools:visibility="visible" />
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

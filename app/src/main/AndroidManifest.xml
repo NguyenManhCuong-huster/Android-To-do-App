@@ -1,12 +1,76 @@
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<?xml version="1.0" encoding="utf-8"?><!--
+  AndroidManifest.xml — TodoApp
 
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+  Cấu hình đầy đủ cho toàn bộ project:
+  - Permissions: network + notifications + alarms
+  - Application class TodoApplication
+  - Toàn bộ 12 Activity
+  - TaskAlarmReceiver (broadcast cho reminder)
+  - FileProvider (MỚI 2026-05-23 — share file đính kèm sang app khác)
+  - <queries> (MỚI 2026-05-23 — Android 11+ package visibility cho ACTION_VIEW)
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ═══════════════════════════════════════════════════════
+         PERMISSIONS
+         ═══════════════════════════════════════════════════════ -->
+
+    <!-- Network: gọi REST API + check connectivity -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- Notifications: nhắc task. Android 13+ runtime permission. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- Alarms chính xác cho task reminder.
+         SCHEDULE_EXACT_ALARM cho Android 12 (API 31-32).
+         USE_EXACT_ALARM cho Android 13+ (API 33+) — không cần user grant manual.
+         RECEIVE_BOOT_COMPLETED để reschedule sau khi reboot máy. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- ═══════════════════════════════════════════════════════
+         QUERIES (Android 11+ / API 30+)
+
+         Từ Android 11, app chỉ "thấy" được các app khác đã khai báo ở đây.
+         Cần khai báo:
+         - ACTION_VIEW với MIME * /* : để Intent picker mở file đính kèm
+           tìm được PDF/Word/Excel reader.
+         - ACTION_SENDTO + mailto: để Reply qua app email.
+         - ACTION_VIEW http(s): để mở news article trên browser.
+         ═══════════════════════════════════════════════════════ -->
+    <queries>
+        <!-- Mở file đính kèm với mọi mime type (PDF/DOC/XLS/ảnh/...) -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="*/*" />
+        </intent>
+
+        <!-- Reply email -->
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="mailto" />
+        </intent>
+
+        <!-- Mở URL bài viết / Gmail web -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+    </queries>
+
+    <!-- ═══════════════════════════════════════════════════════
+         APPLICATION
+         ═══════════════════════════════════════════════════════ -->
     <application
+        android:name=".TodoApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -14,46 +78,121 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:name=".TodoApplication"
-        android:theme="@style/Theme.TodoApp">
+        android:theme="@style/Theme.TodoApp"
+        android:usesCleartextTraffic="true"
+        tools:targetApi="31">
 
-        <receiver
-            android:name=".notification.TaskAlarmReceiver"
-            android:exported="false" />
+        <!-- ─────────────────────────────────────────────────
+             LAUNCHER ACTIVITY
+             ───────────────────────────────────────────────── -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- ─────────────────────────────────────────────────
+             TASK FLOW
+             ───────────────────────────────────────────────── -->
+        <activity
+            android:name=".ui.tasks.TasksActivity"
+            android:exported="false"
+            android:label="Tasks" />
 
         <activity
             android:name=".ui.taskdetail.TaskDetailActivity"
             android:exported="false"
-            android:theme="@style/Theme.TodoApp" />
+            android:label="Task Detail"
+            android:parentActivityName=".ui.tasks.TasksActivity" />
+
         <activity
             android:name=".ui.createtask.CreateTaskActivity"
             android:exported="false"
-            android:theme="@style/Theme.TodoApp" />
-        <activity
-            android:name=".ui.tasks.TasksActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:exported="false"
-            android:theme="@style/Theme.TodoApp.Fullscreen" />
-        <activity
-            android:name=".ui.tag.TagsActivity"
-            android:exported="false"
-            android:theme="@style/Theme.TodoApp" />
+            android:label="Create Task"
+            android:parentActivityName=".ui.tasks.TasksActivity"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
-            android:name=".HealthActivity"
+            android:name=".ui.tags.TagsActivity"
             android:exported="false"
-            android:theme="@style/Theme.TodoApp" />
+            android:label="Tags" />
+
+        <!-- ─────────────────────────────────────────────────
+             EMAIL FLOW
+             ───────────────────────────────────────────────── -->
+        <activity
+            android:name=".ui.email.EmailActivity"
+            android:exported="false"
+            android:label="Emails"
+            android:parentActivityName=".MainActivity" />
 
         <activity
-            android:name=".MainActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+            android:name=".ui.emailthread.EmailThreadActivity"
+            android:exported="false"
+            android:label="Email Thread"
+            android:parentActivityName=".ui.email.EmailActivity" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+        <!-- ─────────────────────────────────────────────────
+             NEWS FLOW
+             ───────────────────────────────────────────────── -->
+        <activity
+            android:name=".ui.news.NewsListActivity"
+            android:exported="false"
+            android:label="News"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".ui.news.NewsDetailActivity"
+            android:exported="false"
+            android:label="News Detail"
+            android:parentActivityName=".ui.news.NewsListActivity" />
+
+        <!-- ─────────────────────────────────────────────────
+             AI / PROFILE / SETTINGS
+             ───────────────────────────────────────────────── -->
+        <activity
+            android:name=".ui.aichat.AiChatActivity"
+            android:exported="false"
+            android:label="AI Chat"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.profile.ProfileActivity"
+            android:exported="false"
+            android:label="Profile"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".ui.settings.SettingsActivity"
+            android:exported="false"
+            android:label="Settings"
+            android:parentActivityName=".MainActivity" />
+
+        <!-- ═══════════════════════════════════════════════════
+             RECEIVERS — task reminder broadcasts
+             ═══════════════════════════════════════════════════ -->
+        <receiver
+            android:name=".notification.TaskAlarmReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <!-- ═══════════════════════════════════════════════════
+             PROVIDERS
+             ═══════════════════════════════════════════════════ -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
     </application>
-
-
 </manifest>
