@@ -4,6 +4,7 @@ import android.util.Log
 import com.project3.todoapp.authentication.AuthManager
 import com.project3.todoapp.data.attachment.AttachmentRepository
 import com.project3.todoapp.data.news.local.NewsDAO
+import com.project3.todoapp.data.news.local.NewsRecommendationDAO
 import com.project3.todoapp.data.news.network.NetworkDataSource
 import com.project3.todoapp.data.news.network.NetworkNews
 import com.project3.todoapp.network.NetworkManager
@@ -18,15 +19,21 @@ import kotlinx.coroutines.withContext
 /**
  * DefaultNewsRepository — local-first, network khi có thể.
  *
- * THAY ĐỔI 2026-05-23:
- *  - Sau khi refresh news từ server, sync attachments per news qua
+ *  - Sau khi refresh news, sync attachments per news qua
  *    [AttachmentRepository.upsertForOwner]. Server đã embed attachments[]
  *    trong response /api/news → KHÔNG cần round-trip thêm.
  *  - 1 news fail attachment sync KHÔNG kill cả batch.
+ *
+ * THÊM MỚI: recommendations.
+ *  - [getRecommendationsStream] observe DAO mới + trigger refresh ngầm.
+ *  - [refreshRecommendations] pull /api/news/recommendations, UPSERT cả
+ *    news (full data) lẫn news_recommendations.
+ *  - [dismissRecommendation] update local trước (snappy), push server background.
  */
 class DefaultNewsRepository(
     private val networkDataSource: NetworkDataSource,
     private val localDataSource: NewsDAO,
+    private val recommendationDao: NewsRecommendationDAO,           // ← MỚI
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val scope: CoroutineScope,
     private val authManager: AuthManager,
@@ -62,11 +69,75 @@ class DefaultNewsRepository(
     }
 
     // ═════════════════════════════════════════════════════
+    //  RECOMMENDATIONS
+    // ═════════════════════════════════════════════════════
+
+    override fun getRecommendationsStream(): Flow<List<News>> {
+        tryRefreshRecommendations()
+        return recommendationDao.observeRecommended().map { list ->
+            withContext(dispatcher) { list.toExternal() }
+        }
+    }
+
+    override suspend fun refreshRecommendations() {
+        if (!shouldSync()) return
+        withContext(dispatcher) {
+            val remote = networkDataSource.loadRecommendations(limit = 50)
+            // Nếu remote rỗng → có thể server lỗi HOẶC user chưa có profile.
+            // Vẫn replace cache để clear UI (tránh hiển thị stale).
+            if (remote.isEmpty()) {
+                recommendationDao.deleteAll()
+                Log.d(TAG, "loadRecommendations() returned empty")
+                return@withContext
+            }
+
+            // 1. UPSERT news (vì có thể news đề xuất chưa nằm trong local cache).
+            localDataSource.upsertAll(remote.toLocal())
+
+            // 2. Replace recommendation cache (atomic).
+            val recs = remote.mapNotNull { it.toLocalRecommendation() }
+            recommendationDao.replaceAll(recs)
+
+            // 3. Sync attachments giống refresh thường.
+            syncAttachments(remote)
+
+            Log.d(TAG, "Refreshed ${recs.size} recommendations")
+        }
+    }
+
+    override suspend fun dismissRecommendation(newsId: String) {
+        // Local trước (UI mất ngay, snappy)
+        withContext(dispatcher) { recommendationDao.dismiss(newsId) }
+        // Server sau (fire-and-forget, không block UI)
+        scope.launch(dispatcher) {
+            try {
+                networkDataSource.dismissRecommendation(newsId)
+            } catch (e: Exception) {
+                Log.w(TAG, "dismiss server fail: ${e.message}")
+            }
+        }
+    }
+
+    private fun tryRefreshRecommendations() {
+        if (!shouldSync()) return
+        scope.launch {
+            try {
+                refreshRecommendations()
+            } catch (e: Exception) {
+                Log.e(TAG, "Background refresh recommendations failed", e)
+            }
+        }
+    }
+
+    // ═════════════════════════════════════════════════════
     //  WRITE (chỉ reset local)
     // ═════════════════════════════════════════════════════
 
     override suspend fun deleteAllNews() {
-        withContext(dispatcher) { localDataSource.deleteAll() }
+        withContext(dispatcher) {
+            recommendationDao.deleteAll()       // ← MỚI: clear cùng news
+            localDataSource.deleteAll()
+        }
     }
 
     // ═════════════════════════════════════════════════════

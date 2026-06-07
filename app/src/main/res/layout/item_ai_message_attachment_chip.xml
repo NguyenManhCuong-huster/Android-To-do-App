@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  item_ai_message_attachment_chip.xml — chip "📎 filename" hiển thị
+  bên trong bubble tin nhắn (cả user và assistant).
+
+  AiMessageAdapter::bindAttachments() inflate file này vào
+  userAttachmentsContainer / assistantAttachmentsContainer cho mỗi
+  AttachmentRef trong message.attachments.
+
+  Tap chip → onAttachmentTap(ref) → AiChatActivity tải file về cache và
+  mở bằng Intent.ACTION_VIEW (giống EmailThreadActivity / NewsDetailActivity).
+
+  ID quan trọng (Adapter tham chiếu):
+   - @id/tvChipFileName
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="4dp"
+    android:background="@drawable/bg_attachment_chip"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?android:attr/selectableItemBackground"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingHorizontal="8dp"
+    android:paddingVertical="6dp">
+
+    <ImageView
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+        android:layout_marginEnd="6dp"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_attach_file"
+        android:tint="#0288D1" />
+
+    <TextView
+        android:id="@+id/tvChipFileName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ellipsize="middle"
+        android:maxLines="1"
+        android:maxWidth="220dp"
+        android:textColor="#0288D1"
+        android:textSize="12sp" />
+</LinearLayout>

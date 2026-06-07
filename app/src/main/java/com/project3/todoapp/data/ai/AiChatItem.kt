@@ -1,34 +1,16 @@
 package com.project3.todoapp.data.ai
 
-/**
- * AiChatItem — 1 item hiển thị trong UI list của AI chat.
- *
- *   - [Message]  → bubble user/assistant (mở rộng từ [AiMessage]).
- *   - [ToolCall] → card "AI đã làm gì" (vd tạo task), chèn giữa các bubble.
- *
- * Server trả `tool_calls` array trong response → ViewModel render tool calls
- * TRƯỚC rồi tới reply của assistant, đúng thứ tự AI thực hiện.
- *
- * LƯU Ý: Khi gửi history lên server cho lần chat kế tiếp, CHỈ gửi
- * [Message] items (filter bỏ ToolCall). Server tự quản function-call loop
- * trong từng request — client không cần lưu tool history.
- */
+
 sealed interface AiChatItem {
 
     data class Message(val message: AiMessage) : AiChatItem {
         val role: AiMessage.Role get() = message.role
-        val content: String      get() = message.content
+        val content: String get() = message.content
+        val attachments: List<AttachmentRef> get() = message.attachments
     }
 
     /**
      * Card "AI đã làm gì".
-     *
-     * @param name          Tên tool, hiện chỉ "create_task".
-     * @param success       true nếu tool chạy thành công.
-     * @param title         Tiêu đề card. VD: "Đã tạo task: Nộp báo cáo môn AI".
-     * @param subtitle      Dòng phụ — meta (loại, deadline…). Có thể null.
-     * @param tags          Tag đã được gán vào task (để render chip màu).
-     * @param errorMessage  Khi success=false thì giải thích lỗi.
      */
     data class ToolCall(
         val name: String,
@@ -49,4 +31,21 @@ sealed interface AiChatItem {
 data class AiChatResult(
     val reply: String,
     val toolCalls: List<AiChatItem.ToolCall>,
+)
+
+/**
+ * AttachmentRef — UUID + tên file kèm mime/size để render chip trong bubble.
+ *
+ * Wire format (server ↔ client):
+ *   { "id": "<uuid>", "file_name": "report.pdf",
+ *     "mime_type": "application/pdf", "size_bytes": 12345 }
+ *
+ * UUID CHỈ tồn tại ở wire format và UI internal — KHÔNG bao giờ lộ ra cho AI
+ * thấy. AI chỉ thấy tên file qua system instruction (do server build).
+ */
+data class AttachmentRef(
+    val id: String,
+    val fileName: String,
+    val mimeType: String? = null,
+    val sizeBytes: Long? = null,
 )

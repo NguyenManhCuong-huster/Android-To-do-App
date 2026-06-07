@@ -1,21 +1,6 @@
 package com.project3.todoapp.data.attachment
 
-/**
- * Attachment — model UI cho 1 file đính kèm (email Gmail hoặc news HUST CTT).
- *
- * Polymorphic theo [ownerType]:
- *  - OWNER_EMAIL → ownerId là id của bảng emails (Local + Server).
- *  - OWNER_NEWS  → ownerId là id của bảng news.
- *
- * Client KHÔNG tạo/sửa attachments — chỉ sync metadata + download bytes on-demand.
- *
- * @property isDownloaded  Server đã có file trên đĩa chưa. Nếu false → tap chip
- *                         sẽ trả lỗi (file quá lớn / fetch fail) và UI hiển thị
- *                         disabled/grayed.
- * @property localCachedPath Đường dẫn file đã cache xuống device sau khi user
- *                           tap. null = chưa tải về máy. Khi != null → mở luôn
- *                           không gọi network.
- */
+
 data class Attachment(
     val id: String,
     val ownerType: AttachmentOwner,
@@ -32,12 +17,14 @@ data class Attachment(
 
 enum class AttachmentOwner {
     EMAIL,
-    NEWS;
+    NEWS,
+    AI_CHAT;                                                                  // ← MỚI 2026-05-31
 
     companion object {
         fun fromServer(value: String?): AttachmentOwner = when (value?.uppercase()) {
             "NEWS" -> NEWS
-            else   -> EMAIL
+            "AI_CHAT" -> AI_CHAT
+            else -> EMAIL
         }
     }
 }

@@ -8,7 +8,8 @@ import java.util.TimeZone
 /**
  * NewsNetworkDataSource — impl của [NetworkDataSource].
  *
- * THAY ĐỔI 2026-05-23: Map `attachments` từ DTO → NetworkAttachment.
+ * Mọi method tự bắt exception, fallback emptyList/false để repository
+ * không cần try/catch khi gọi (offline-first pattern).
  */
 class NewsNetworkDataSource(
     private val newsApi: NewsApi,
@@ -22,6 +23,30 @@ class NewsNetworkDataSource(
         emptyList()
     }
 
+    // ─── Recommendations ─────────────────────────────────────
+
+    override suspend fun loadRecommendations(limit: Int): List<NetworkNews> = try {
+        newsApi.listRecommendations(limit = limit)
+            .data
+            .map { it.toNetworkNews() }
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    override suspend fun refreshRecommendations(): Boolean = try {
+        newsApi.refreshRecommendations().success
+    } catch (_: Exception) {
+        false
+    }
+
+    override suspend fun dismissRecommendation(newsId: String): Boolean = try {
+        newsApi.dismissRecommendation(newsId).success
+    } catch (_: Exception) {
+        false
+    }
+
+    // ─── DTO → NetworkNews ────────────────────────────────────
+
     private fun NewsDto.toNetworkNews() = NetworkNews(
         id          = id,
         kind        = kind,
@@ -34,6 +59,10 @@ class NewsNetworkDataSource(
         modTime     = fromIso(mod_time),
         sourceName  = source_name,
         attachments = attachments?.toNetwork().orEmpty(),
+
+        recommendScore           = score,
+        recommendReason          = reason,
+        recommendMatchedKeywords = matched_keywords.orEmpty(),
     )
 
     private fun fromIso(iso: String?): Long {

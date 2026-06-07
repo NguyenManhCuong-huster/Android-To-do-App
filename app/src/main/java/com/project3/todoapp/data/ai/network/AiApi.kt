@@ -1,23 +1,23 @@
 package com.project3.todoapp.data.ai.network
 
 import com.project3.todoapp.network.ApiResponse
+import okhttp3.MultipartBody
 import retrofit2.http.Body
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.Part
 
-/**
- * AiApi — gọi tới /api/ai trên server. Server tự bọc Gemini API.
- *
- * Quy ước message: { role: "user" | "assistant", content: "..." }.
- *
- * THAY ĐỔI 2025-05-04:
- *   Response thêm field `tool_calls` — list các action AI đã thực hiện
- *   (vd tạo task qua function calling). Client dùng để hiển thị process
- *   trong chat UI.
- */
+data class AttachmentRefBody(
+    val id: String,
+    val file_name: String,
+    val mime_type: String? = null,
+    val size_bytes: Long? = null,
+)
 
 data class AiMessageBody(
-    val role: String,    // "user" hoặc "assistant"
+    val role: String,                                              // "user" | "assistant"
     val content: String,
+    val attachments: List<AttachmentRefBody>? = null,              // ← MỚI 2026-05-31
 )
 
 data class AiChatBody(
@@ -30,21 +30,27 @@ data class AiEmailChatBody(
     val messages: List<AiMessageBody>,
 )
 
-/**
- * 1 entry trong response.tool_calls.
- *
- *   name   = "create_task"
- *   args   = { title, description, start_time, end_time, task_type, tag_ids }
- *   result = { success, task: { id, title, ... , tags: [...] } }
- *            hoặc { success: false, error: "..." }
- *
- * Dùng Map<String, Any?> cho linh hoạt — Gson tự parse JSON object thành
- * Map<String, *>, JSON array thành List<*>. ViewModel sẽ extract field cần.
- */
+data class AiNewsChatBody(
+    // ← MỚI 2026-05-31
+    val news_id: String,
+    val messages: List<AiMessageBody>,
+)
+
+/** 1 entry trong response.tool_calls. */
 data class AiToolCallDto(
     val name: String,
     val args: Map<String, Any?>? = null,
     val result: Map<String, Any?>? = null,
+)
+
+/** Mini DTO cho effective_attachments trong response. */
+data class EffectiveAttachmentDto(
+    val id: String,
+    val file_name: String,
+    val mime_type: String?,
+    val size_bytes: Long?,
+    val is_downloaded: Boolean?,
+    val is_inline: Boolean?,
 )
 
 data class AiChatReply(
@@ -52,6 +58,15 @@ data class AiChatReply(
     val thread_message_count: Int? = null,
     val usage: Map<String, Any?>? = null,
     val tool_calls: List<AiToolCallDto>? = null,
+    val effective_attachments: List<EffectiveAttachmentDto>? = null,           // ← MỚI
+)
+
+/** Response của /api/ai/upload-attachment. */
+data class AiUploadAttachmentDto(
+    val id: String,
+    val file_name: String,
+    val mime_type: String?,
+    val size_bytes: Long?,
 )
 
 interface AiApi {
@@ -63,4 +78,18 @@ interface AiApi {
     /** Chat có context là 1 thread email (server tự load thread). */
     @POST("api/ai/email-chat")
     suspend fun emailChat(@Body body: AiEmailChatBody): ApiResponse<AiChatReply>
+
+    /** Chat có context là 1 news/plan (server tự load + đính kèm file của news). */
+    @POST("api/ai/news-chat")                                                  // ← MỚI 2026-05-31
+    suspend fun newsChat(@Body body: AiNewsChatBody): ApiResponse<AiChatReply>
+
+    /**
+     * Upload 1 file vào AI Chat (owner_type='AI_CHAT' ở server).
+     * Multipart field name = "file".
+     */
+    @Multipart
+    @POST("api/ai/upload-attachment")                                          // ← MỚI 2026-05-31
+    suspend fun uploadAttachment(
+        @Part file: MultipartBody.Part,
+    ): ApiResponse<AiUploadAttachmentDto>
 }

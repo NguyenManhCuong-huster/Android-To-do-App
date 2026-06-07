@@ -46,10 +46,9 @@ import com.project3.todoapp.data.userinfo.network.NetworkDataSource as UserInfoN
 /**
  * AppContainer — DI thủ công.
  *
- * THAY ĐỔI 2026-05-23:
- *  - Thêm AttachmentRepository (sync metadata file đính kèm + download-on-demand).
- *  - EmailRepository và NewsRepository giờ depend AttachmentRepository → khởi tạo
- *    sau attachmentRepository.
+ * THAY ĐỔI 2026-05-31:
+ *  - AiRepository giờ depend ContentResolver để upload file (đọc bytes từ
+ *    content Uri user pick qua SAF).
  */
 class AppContainer(val context: Context) {
 
@@ -67,7 +66,7 @@ class AppContainer(val context: Context) {
     val userInfoApi: UserInfoApi by lazy { apiClient.create(UserInfoApi::class.java) }
     val aiApi: AiApi by lazy { apiClient.create(AiApi::class.java) }
     val newsApi: NewsApi by lazy { apiClient.create(NewsApi::class.java) }
-    val attachmentApi: AttachmentApi by lazy { apiClient.create(AttachmentApi::class.java) }     // ← MỚI
+    val attachmentApi: AttachmentApi by lazy { apiClient.create(AttachmentApi::class.java) }
 
     // ── 3. DATABASE ────────────────────────────────────
     private val database by lazy { ToDoDatabase.getDatabase(context) }
@@ -116,7 +115,7 @@ class AppContainer(val context: Context) {
         )
     }
 
-    /** ← MỚI. Khởi tạo trước email/news repo vì 2 cái kia depend. */
+    /** Khởi tạo trước email/news repo vì 2 cái kia depend. */
     val attachmentRepository: AttachmentRepository by lazy {
         AttachmentRepository(
             context        = context.applicationContext,
@@ -132,12 +131,17 @@ class AppContainer(val context: Context) {
             networkDataSource = emailNetworkDataSource,
             authManager = authManager,
             networkManager = networkManager,
-            attachmentRepository = attachmentRepository,    // ← MỚI
+            attachmentRepository = attachmentRepository,
             dispatcher = Dispatchers.IO,
         )
     }
 
-    val aiRepository: AiRepository by lazy { AiRepository(aiApi) }
+    val aiRepository: AiRepository by lazy {
+        AiRepository(
+            aiApi           = aiApi,
+            contentResolver = context.applicationContext.contentResolver,          // ← MỚI
+        )
+    }
 
     val userInfoRepository: UserInfoRepository by lazy {
         DefaultUserInfoRepository(
@@ -152,13 +156,14 @@ class AppContainer(val context: Context) {
 
     val newsRepository: NewsRepository by lazy {
         DefaultNewsRepository(
-            networkDataSource = newsNetworkDataSource,
-            localDataSource = database.newsDao(),
-            dispatcher = Dispatchers.IO,
-            scope = appScope,
-            authManager = authManager,
-            networkManager = networkManager,
-            attachmentRepository = attachmentRepository,    // ← MỚI
+            networkDataSource    = newsNetworkDataSource,
+            localDataSource      = database.newsDao(),
+            recommendationDao    = database.newsRecommendationDao(),
+            dispatcher           = Dispatchers.IO,
+            scope                = appScope,
+            authManager          = authManager,
+            networkManager       = networkManager,
+            attachmentRepository = attachmentRepository,
         )
     }
 

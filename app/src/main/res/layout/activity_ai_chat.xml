@@ -1,17 +1,27 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-  activity_ai_chat.xml — màn AI chat về 1 email.
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  activity_ai_chat.xml — màn AI chat (Email / News / Standalone).
 
   ┌──────────────────────────────────┐
   │ ← Trợ lý AI                       │ Header
-  │   tvSubtitle (Về email: ...)      │
+  │   tvSubtitle (Về email/news/...)  │
   ├──────────────────────────────────┤
   │ [chip] [chip] [chip]              │ Quick prompts
   ├──────────────────────────────────┤
   │ rvMessages                        │
   │  ...bubble user/assistant...      │
   ├──────────────────────────────────┤
-  │ [etInput..............]  [Gửi]    │ Footer input
+  │ [📎file.pdf×] [📎...×]   ⌛       │ pendingAttachmentsRow (GONE)
+  ├──────────────────────────────────┤
+  │ [📎] [etInput..........]  [Gửi]   │ Footer input
   └──────────────────────────────────┘
+
+  THAY ĐỔI 2026-05-31:
+   - Thêm btnAttach (paperclip) bên trái etInput trong footer.
+   - Thêm pendingAttachmentsRow (LinearLayout, GONE mặc định) trên footer,
+     chứa progress + horizontalScroll các chip file đang chờ gửi kèm.
+   - rvMessages giờ constraint bottom_toTopOf pendingAttachmentsRow
+     (khi row GONE thì pending row có size 0, rvMessages tự sát footer).
 -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -130,7 +140,7 @@
         android:layout_height="0dp"
         android:clipToPadding="false"
         android:paddingVertical="8dp"
-        app:layout_constraintBottom_toTopOf="@id/footer"
+        app:layout_constraintBottom_toTopOf="@id/pendingAttachmentsRow"
         app:layout_constraintTop_toBottomOf="@id/chipsRow" />
 
     <TextView
@@ -138,14 +148,61 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:text="Hỏi AI về email này\n(Tóm tắt / Phản hồi / Action items)"
+        android:text="Hỏi AI...\n(Tóm tắt / Phản hồi / Action items)"
         android:textColor="#888"
         android:textSize="13sp"
         android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/footer"
+        app:layout_constraintBottom_toTopOf="@id/pendingAttachmentsRow"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/chipsRow" />
+
+    <!--
+      Pending attachments row (GONE mặc định).
+      Activity::renderPendingAttachments() set visibility + inflate chip vào
+      pendingAttachmentsContainer.
+    -->
+    <LinearLayout
+        android:id="@+id/pendingAttachmentsRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/white"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="6dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/footer">
+
+        <ProgressBar
+            android:id="@+id/pendingProgress"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginEnd="6dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/pendingProgressLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:textColor="#666666"
+            android:textSize="11sp"
+            android:visibility="gone" />
+
+        <HorizontalScrollView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/pendingAttachmentsContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+    </LinearLayout>
 
     <!-- Input footer -->
     <LinearLayout
@@ -158,6 +215,17 @@
         android:orientation="horizontal"
         android:padding="8dp"
         app:layout_constraintBottom_toBottomOf="parent">
+
+        <ImageButton
+            android:id="@+id/btnAttach"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="4dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Đính kèm file"
+            android:padding="8dp"
+            android:src="@drawable/ic_attach_file"
+            app:tint="#555555" />
 
         <EditText
             android:id="@+id/etInput"

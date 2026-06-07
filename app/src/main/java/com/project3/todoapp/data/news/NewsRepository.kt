@@ -13,6 +13,10 @@ import kotlinx.coroutines.flow.Flow
  * Pattern offline-first vẫn giữ:
  *  - Mọi READ trả về thẳng từ Room (UI có data ngay cả khi offline).
  *  - Network chỉ là best-effort để cập nhật cache.
+ *
+ * THÊM MỚI (recommendations):
+ *  - [getRecommendationsStream] / [refreshRecommendations] / [dismissRecommendation]
+ *  - Cache local trong bảng `news_recommendations` (JOIN với `news` khi đọc).
  */
 interface NewsRepository {
 
@@ -33,12 +37,28 @@ interface NewsRepository {
 
     /**
      * Đồng bộ 1 chiều từ server: kéo toàn bộ news, replace cache local.
-     * Dùng [androidx.room.Transaction] nội bộ để UI Flow không thấy
-     * trạng thái rỗng tạm thời.
      * No-op nếu offline / chưa đăng nhập.
      */
     suspend fun refresh()
 
     /** Reset cache local (gọi khi đăng xuất / đổi user). */
     suspend fun deleteAllNews()
+
+    // ─── Recommendations ───────────────────────────────────────
+
+    /**
+     * Stream news đã được đề xuất (sorted by score DESC).
+     * Mỗi News kèm `recommendScore`/`recommendReason` để UI hiển thị chip.
+     * Tự trigger refreshRecommendations() best-effort khi observe.
+     */
+    fun getRecommendationsStream(): Flow<List<News>>
+
+    /**
+     * Force pull recommendations từ server, replace local cache.
+     * No-op nếu offline / chưa đăng nhập.
+     */
+    suspend fun refreshRecommendations()
+
+    /** User ẩn 1 đề xuất. Update local trước (snappy), push server background. */
+    suspend fun dismissRecommendation(newsId: String)
 }

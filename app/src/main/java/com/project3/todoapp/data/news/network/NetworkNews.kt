@@ -5,9 +5,8 @@ import com.project3.todoapp.data.attachment.network.NetworkAttachment
 /**
  * NetworkNews — DTO trung gian giữa repository và Retrofit.
  *
- * THAY ĐỔI 2026-05-23:
- *  - Thêm `attachments`. NewsRepository sync vào attachment_dao trong cùng
- *    transaction refresh.
+ * 3 field `recommendXxx` chỉ có giá trị khi instance đến từ
+ * /api/news/recommendations. Với /api/news thường thì luôn null/empty.
  */
 data class NetworkNews(
     val id: String,
@@ -20,5 +19,10 @@ data class NetworkNews(
     val publishedAt: Long,
     val modTime: Long,
     val sourceName: String?,
-    val attachments: List<NetworkAttachment> = emptyList(),    // ← MỚI
+    val attachments: List<NetworkAttachment> = emptyList(),
+
+    // ─── MỚI: optional, chỉ có nếu response từ /api/news/recommendations ───
+    val recommendScore: Float? = null,
+    val recommendReason: String? = null,
+    val recommendMatchedKeywords: List<String> = emptyList(),
 )

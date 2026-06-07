@@ -4,6 +4,12 @@
 
   AiMessageAdapter ẩn/hiện 1 trong 2 LinearLayout (bubbleUser hoặc bubbleAssistant)
   tuỳ role. Dùng FrameLayout root để 2 bubble overlap nhưng align trái/phải khác nhau.
+
+  THAY ĐỔI 2026-05-31:
+   - Mỗi bubble có thêm 1 LinearLayout con (userAttachmentsContainer /
+     assistantAttachmentsContainer) để render chip file đính kèm.
+   - Adapter::bindAttachments() sẽ inflate item_ai_message_attachment_chip.xml
+     vào container. Mặc định GONE; chỉ hiện khi message.attachments không rỗng.
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -30,6 +36,15 @@
             android:layout_height="wrap_content"
             android:textColor="@android:color/white"
             android:textSize="14sp" />
+
+        <!-- Attachment chips (inflate runtime) -->
+        <LinearLayout
+            android:id="@+id/userAttachmentsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="vertical"
+            android:visibility="gone" />
     </LinearLayout>
 
     <!-- ASSISTANT bubble: align left, surface color -->
@@ -52,6 +67,15 @@
             android:textColor="#222222"
             android:textIsSelectable="true"
             android:textSize="14sp" />
+
+        <!-- Attachment chips (inflate runtime, rất hiếm khi assistant gửi file) -->
+        <LinearLayout
+            android:id="@+id/assistantAttachmentsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="vertical"
+            android:visibility="gone" />
     </LinearLayout>
 
 </FrameLayout>

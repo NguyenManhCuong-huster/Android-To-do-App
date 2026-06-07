@@ -18,17 +18,20 @@ import kotlinx.coroutines.launch
 /**
  * NewsListViewModel — state cho [NewsListActivity].
  *
- * Filter qua tab: ALL / NEWS / PLAN. Khi đổi tab, [filter] update →
- * [news] tự switch sang Flow tương ứng từ repository (không re-subscribe DAO).
+ * Filter qua tab: ALL / NEWS_ONLY / PLAN_ONLY / RECOMMENDED (← MỚI).
+ * Khi đổi tab, [filter] update → [news] tự switch sang Flow tương ứng từ
+ * repository (không re-subscribe DAO).
  *
- * Pull-to-refresh: [refresh] gọi repository.refresh() (PULL từ server).
+ * Pull-to-refresh: [refresh] gọi đúng method tuỳ tab đang active —
+ *  RECOMMENDED → refreshRecommendations(), còn lại → refresh() thường.
+ *
  * Lỗi nuốt im lặng — UI chỉ tắt swipe spinner.
  */
 class NewsListViewModel(
     private val repository: NewsRepository,
 ) : ViewModel() {
 
-    enum class Filter { ALL, NEWS_ONLY, PLAN_ONLY }
+    enum class Filter { ALL, NEWS_ONLY, PLAN_ONLY, RECOMMENDED }
 
     private val _filter = MutableStateFlow(Filter.ALL)
     val filter: StateFlow<Filter> = _filter.asStateFlow()
@@ -39,9 +42,10 @@ class NewsListViewModel(
     @OptIn(ExperimentalCoroutinesApi::class)
     val news: StateFlow<List<News>> = _filter.flatMapLatest { f ->
         when (f) {
-            Filter.ALL       -> repository.getNewsStream()
-            Filter.NEWS_ONLY -> repository.getNewsStream(kind = NewsKind.NEWS)
-            Filter.PLAN_ONLY -> repository.getNewsStream(kind = NewsKind.PLAN)
+            Filter.ALL         -> repository.getNewsStream()
+            Filter.NEWS_ONLY   -> repository.getNewsStream(kind = NewsKind.NEWS)
+            Filter.PLAN_ONLY   -> repository.getNewsStream(kind = NewsKind.PLAN)
+            Filter.RECOMMENDED -> repository.getRecommendationsStream()
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -52,12 +56,23 @@ class NewsListViewModel(
         _isRefreshing.value = true
         viewModelScope.launch {
             try {
-                repository.refresh()
+                if (_filter.value == Filter.RECOMMENDED) {
+                    repository.refreshRecommendations()
+                } else {
+                    repository.refresh()
+                }
             } catch (_: Exception) {
                 // Swallow — repository đã log; UI chỉ cần tắt spinner.
             } finally {
                 _isRefreshing.value = false
             }
+        }
+    }
+
+    /** Dismiss 1 đề xuất (gọi từ swipe / nút X trên card). */
+    fun dismissRecommendation(newsId: String) {
+        viewModelScope.launch {
+            try { repository.dismissRecommendation(newsId) } catch (_: Exception) {}
         }
     }
 

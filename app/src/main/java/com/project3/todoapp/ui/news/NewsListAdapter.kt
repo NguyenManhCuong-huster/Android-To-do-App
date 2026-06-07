@@ -19,6 +19,9 @@ import java.util.Locale
  * 1 layout duy nhất [item_news.xml] dùng cho cả NEWS và PLAN; khác nhau ở việc
  * có hiển thị thumbnail hay không (PLAN không có).
  *
+ * Khi card là recommendation (item.isRecommended == true) thì hiển thị
+ * thêm chip xanh lá "Khớp: K66, CNTT" ở giữa title và summary.
+ *
  * Click → [onClick] (NewsListActivity gắn vào để mở detail).
  */
 class NewsListAdapter(
@@ -63,6 +66,11 @@ class NewsListAdapter(
             // Summary preview — 2 dòng đầu
             b.tvSummary.isVisible = !item.summary.isNullOrBlank()
             b.tvSummary.text      = item.summary.orEmpty()
+
+            // ─── MỚI: chip "lý do match" — chỉ hiện khi là recommendation ───
+            b.tvRecommendReason.isVisible =
+                item.isRecommended && !item.recommendReason.isNullOrBlank()
+            b.tvRecommendReason.text = item.recommendReason.orEmpty()
 
             b.root.setOnClickListener { onClick(item) }
         }

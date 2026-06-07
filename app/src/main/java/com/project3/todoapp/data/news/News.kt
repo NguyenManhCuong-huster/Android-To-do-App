@@ -14,6 +14,10 @@ package com.project3.todoapp.data.news
  * @property modTime     Lần cuối record được cập nhật ở server (ms epoch UTC).
  * @property summary     Plain text full body của trang chi tiết. KHÔNG phải HTML.
  * @property imageUrl    Thumbnail (chỉ NEWS có; PLAN luôn null).
+ *
+ * @property recommendScore            Score do server tính (cao = match user_info tốt). Null nếu không phải đề xuất.
+ * @property recommendReason           "Khớp: K66, CNTT" — server build sẵn, UI render thẳng.
+ * @property recommendMatchedKeywords  List keyword đã match (debug / future use).
  */
 data class News(
     val id: String,
@@ -26,7 +30,15 @@ data class News(
     val publishedAt: Long,
     val modTime: Long,
     val sourceName: String?,
-)
+
+    // ─── Recommendation metadata (chỉ có khi news này nằm trong list đề xuất) ───
+    val recommendScore: Float? = null,
+    val recommendReason: String? = null,
+    val recommendMatchedKeywords: List<String> = emptyList(),
+) {
+    /** True nếu instance này là 1 recommendation (có score). */
+    val isRecommended: Boolean get() = recommendScore != null
+}
 
 enum class NewsKind {
     NEWS,
