@@ -17,7 +17,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.project3.todoapp.TodoApplication
+import com.project3.todoapp.data.ai.AiReference
 import com.project3.todoapp.data.ai.AttachmentRef
+import com.project3.todoapp.ui.emailthread.EmailThreadActivity
+import com.project3.todoapp.ui.news.NewsDetailActivity
 import com.project3.todoapp.databinding.ActivityAiChatBinding
 import kotlinx.coroutines.launch
 import java.io.File
@@ -88,6 +91,21 @@ class AiChatActivity : AppCompatActivity() {
         }
     }
 
+    /** Tap 1 chip trích dẫn trong reply AI -> mở email / news tương ứng. */
+    private fun onReferenceTap(ref: AiReference) {
+        when (ref.type) {
+            "email" -> startActivity(
+                Intent(this, EmailThreadActivity::class.java)
+                    .putExtra(EmailThreadActivity.EXTRA_EMAIL_ID, ref.id)
+                    .putExtra(EmailThreadActivity.EXTRA_SUBJECT, ref.label)
+            )
+            "news" -> startActivity(
+                Intent(this, NewsDetailActivity::class.java)
+                    .putExtra(NewsDetailActivity.EXTRA_NEWS_ID, ref.id)
+            )
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityAiChatBinding.inflate(layoutInflater)
@@ -107,6 +125,7 @@ class AiChatActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         adapter = AiMessageAdapter(
             onAttachmentTap = ::onAttachmentTap,
+            onReferenceTap = ::onReferenceTap,
         )
         binding.rvMessages.adapter = adapter
         binding.rvMessages.layoutManager = LinearLayoutManager(this)

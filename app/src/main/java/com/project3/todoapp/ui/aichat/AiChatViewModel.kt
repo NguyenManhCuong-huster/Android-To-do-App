@@ -236,6 +236,7 @@ class AiChatViewModel(
                         AiMessage(
                             role = AiMessage.Role.ASSISTANT,
                             content = res.reply.ifBlank { "(không có nội dung)" },
+                            references = res.references,
                         ),
                     )
                     val taskCreated = toolItems.any {

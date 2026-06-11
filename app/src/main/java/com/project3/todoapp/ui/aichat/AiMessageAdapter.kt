@@ -3,6 +3,7 @@ package com.project3.todoapp.ui.aichat
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.text.method.LinkMovementMethod
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.project3.todoapp.R
 import com.project3.todoapp.data.ai.AiChatItem
 import com.project3.todoapp.data.ai.AiMessage
+import com.project3.todoapp.data.ai.AiReference
 import com.project3.todoapp.data.ai.AttachmentRef
 import com.project3.todoapp.databinding.ItemAiMessageBinding
 import com.project3.todoapp.databinding.ItemAiToolCallBinding
@@ -31,9 +33,16 @@ import com.project3.todoapp.databinding.ItemAiToolCallBinding
  *  - MessageVH render chip attachment trong bubble (cả user và assistant).
  *  - ToolCallVH dùng emoji 📎 cho tool `read_attachment` (success);
  *    còn lại giữ ✅/⚠️ như bản gốc.
+ *
+ * THAY ĐỔI 2026-06:
+ *  - Constructor nhận thêm [onReferenceTap] callback.
+ *  - Bubble assistant: token trích dẫn [[email:id]] / [[news:id]] trong reply
+ *    được render thành chip bấm được (buildMessageText). Khi có reference,
+ *    bật LinkMovementMethod + tắt textIsSelectable để span bấm được hoạt động.
  */
 class AiMessageAdapter(
     private val onAttachmentTap: (AttachmentRef) -> Unit,
+    private val onReferenceTap: (AiReference) -> Unit,
 ) : ListAdapter<AiChatItem, RecyclerView.ViewHolder>(DiffCb()) {
 
     override fun getItemViewType(position: Int): Int = when (getItem(position)) {
@@ -47,6 +56,7 @@ class AiMessageAdapter(
             VIEW_TYPE_MESSAGE   -> MessageVH(
                 ItemAiMessageBinding.inflate(inflater, parent, false),
                 onAttachmentTap,
+                onReferenceTap,
             )
             VIEW_TYPE_TOOL_CALL -> ToolCallVH(ItemAiToolCallBinding.inflate(inflater, parent, false))
             else                -> error("Unknown viewType $viewType")
@@ -61,11 +71,12 @@ class AiMessageAdapter(
     }
 
     // ─────────────────────────────────────────────────────────────
-    // Message bubble + attachment chips
+    // Message bubble + attachment chips + reference chips
     // ─────────────────────────────────────────────────────────────
     class MessageVH(
         private val b: ItemAiMessageBinding,
         private val onAttachmentTap: (AttachmentRef) -> Unit,
+        private val onReferenceTap: (AiReference) -> Unit,
     ) : RecyclerView.ViewHolder(b.root) {
 
         fun bind(item: AiChatItem.Message) {
@@ -78,8 +89,25 @@ class AiMessageAdapter(
                 bindAttachments(b.userAttachmentsContainer, item.attachments)
                 // Container assistant bên kia ẩn → không cần clear
             } else {
-                b.tvAssistant.text = item.content
+                bindAssistantText(item)
                 bindAttachments(b.assistantAttachmentsContainer, item.attachments)
+            }
+        }
+
+        /**
+         * Render text bubble assistant. Nếu có reference → thay token bằng chip
+         * bấm được + bật LinkMovementMethod. Nếu không → giữ text chọn được như cũ.
+         */
+        private fun bindAssistantText(item: AiChatItem.Message) {
+            if (item.references.isEmpty()) {
+                b.tvAssistant.movementMethod = null
+                b.tvAssistant.setTextIsSelectable(true)
+                b.tvAssistant.text = item.content
+            } else {
+                // textIsSelectable + clickable span xung đột → tắt selectable khi có link.
+                b.tvAssistant.setTextIsSelectable(false)
+                b.tvAssistant.movementMethod = LinkMovementMethod.getInstance()
+                b.tvAssistant.text = buildMessageText(item.content, item.references, onReferenceTap)
             }
         }
 

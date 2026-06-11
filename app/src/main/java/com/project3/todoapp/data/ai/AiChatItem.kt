@@ -7,6 +7,7 @@ sealed interface AiChatItem {
         val role: AiMessage.Role get() = message.role
         val content: String get() = message.content
         val attachments: List<AttachmentRef> get() = message.attachments
+        val references: List<AiReference> get() = message.references   // ← MỚI 2026-06
     }
 
     /**
@@ -27,10 +28,11 @@ sealed interface AiChatItem {
     }
 }
 
-/** Wrapper trả về cho repository — reply text + tool call summary. */
+/** Wrapper trả về cho repository — reply text + tool call summary + references. */
 data class AiChatResult(
     val reply: String,
     val toolCalls: List<AiChatItem.ToolCall>,
+    val references: List<AiReference> = emptyList(),   // ← MỚI 2026-06
 )
 
 /**
@@ -48,4 +50,21 @@ data class AttachmentRef(
     val fileName: String,
     val mimeType: String? = null,
     val sizeBytes: Long? = null,
+)
+
+/**
+ * AiReference — MỚI 2026-06.
+ *
+ * 1 trích dẫn email / tin tức trong reply của AI. Ứng với token
+ * [[email:id]] / [[news:id]] còn lại trong reply text. AiMessageAdapter dùng
+ * [label] để render chip bấm được; tap → mở email/news theo [id].
+ *
+ *   type  = "email" | "news"
+ *   id    = UUID của email / news (đã được server xác thực quyền + tồn tại)
+ *   label = subject (email) hoặc title (news) để hiển thị
+ */
+data class AiReference(
+    val type: String,
+    val id: String,
+    val label: String,
 )

@@ -43,6 +43,20 @@ data class AiToolCallDto(
     val result: Map<String, Any?>? = null,
 )
 
+/**
+ * 1 entry trong response.references — MỚI 2026-06.
+ *
+ * Server (resolveReferences) trả kèm reply: mỗi reference ứng với 1 token
+ * [[email:id]] / [[news:id]] còn lại trong reply (đã xác thực quyền + tồn tại).
+ *
+ * Wire format: { "type": "email" | "news", "id": "<uuid>", "label": "<subject/title>" }
+ */
+data class AiReferenceDto(
+    val type: String?,
+    val id: String?,
+    val label: String?,
+)
+
 /** Mini DTO cho effective_attachments trong response. */
 data class EffectiveAttachmentDto(
     val id: String,
@@ -59,6 +73,7 @@ data class AiChatReply(
     val usage: Map<String, Any?>? = null,
     val tool_calls: List<AiToolCallDto>? = null,
     val effective_attachments: List<EffectiveAttachmentDto>? = null,           // ← MỚI
+    val references: List<AiReferenceDto>? = null,                              // ← MỚI 2026-06
 )
 
 /** Response của /api/ai/upload-attachment. */

@@ -24,4 +24,7 @@ interface NetworkDataSource {
 
     /** User dismiss 1 recommendation. True nếu OK. */
     suspend fun dismissRecommendation(newsId: String): Boolean
+
+    /** Lấy 1 news theo id từ server. Null nếu lỗi / không tồn tại. MỚI 2026-06. */
+    suspend fun loadNewsById(id: String): NetworkNews?
 }

@@ -45,6 +45,12 @@ class NewsNetworkDataSource(
         false
     }
 
+    override suspend fun loadNewsById(id: String): NetworkNews? = try {
+        newsApi.getById(id).data?.toNetworkNews()
+    } catch (_: Exception) {
+        null
+    }
+
     // ─── DTO → NetworkNews ────────────────────────────────────
 
     private fun NewsDto.toNetworkNews() = NetworkNews(

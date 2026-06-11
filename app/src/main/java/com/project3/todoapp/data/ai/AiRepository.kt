@@ -8,6 +8,7 @@ import com.project3.todoapp.data.ai.network.AiChatBody
 import com.project3.todoapp.data.ai.network.AiEmailChatBody
 import com.project3.todoapp.data.ai.network.AiMessageBody
 import com.project3.todoapp.data.ai.network.AiNewsChatBody
+import com.project3.todoapp.data.ai.network.AiReferenceDto
 import com.project3.todoapp.data.ai.network.AiToolCallDto
 import com.project3.todoapp.data.ai.network.AttachmentRefBody
 import kotlinx.coroutines.CoroutineDispatcher
@@ -25,6 +26,7 @@ data class AiMessage(
     val role: Role,
     val content: String,
     val attachments: List<AttachmentRef> = emptyList(),
+    val references: List<AiReference> = emptyList(),
 ) {
     enum class Role { USER, ASSISTANT }
 }
@@ -60,6 +62,7 @@ class AiRepository(
             AiChatResult(
                 reply = data?.reply.orEmpty(),
                 toolCalls = data?.tool_calls.orEmpty().map { it.toUiModel() },
+                references = data?.references.orEmpty().mapNotNull { it.toRefModel() },
             )
         }
     }
@@ -84,6 +87,7 @@ class AiRepository(
             AiChatResult(
                 reply = data?.reply.orEmpty(),
                 toolCalls = data?.tool_calls.orEmpty().map { it.toUiModel() },
+                references = data?.references.orEmpty().mapNotNull { it.toRefModel() },
             )
         }
     }
@@ -105,6 +109,7 @@ class AiRepository(
             AiChatResult(
                 reply = data?.reply.orEmpty(),
                 toolCalls = data?.tool_calls.orEmpty().map { it.toUiModel() },
+                references = data?.references.orEmpty().mapNotNull { it.toRefModel() },
             )
         }
     }
@@ -183,6 +188,13 @@ class AiRepository(
     //  get_email, search_news, get_news, web_search. Mỗi tool có
     //  card hiển thị riêng để user thấy được AI vừa tra cứu gì.
     // ─────────────────────────────────────────────────────────────
+    /** DTO reference (server) -> model UI. Bỏ entry thiếu/sai type. */
+    private fun AiReferenceDto.toRefModel(): AiReference? {
+        val t = type?.lowercase()?.takeIf { it == "email" || it == "news" } ?: return null
+        val i = id?.takeIf { it.isNotBlank() } ?: return null
+        return AiReference(type = t, id = i, label = label.orEmpty())
+    }
+
     private fun AiToolCallDto.toUiModel(): AiChatItem.ToolCall {
         val resultMap = result.orEmpty()
         val success = resultMap["success"] as? Boolean ?: false

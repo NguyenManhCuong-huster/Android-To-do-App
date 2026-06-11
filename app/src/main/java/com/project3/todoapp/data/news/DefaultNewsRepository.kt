@@ -65,7 +65,18 @@ class DefaultNewsRepository(
     }
 
     override suspend fun getNews(id: String): News? = withContext(dispatcher) {
-        localDataSource.getById(id)?.toExternal()
+        // 1) Local trước.
+        localDataSource.getById(id)?.let { return@withContext it.toExternal() }
+
+        // 2) MỚI 2026-06: cache miss -> fetch từ server (news do AI tra ra bằng
+        //    search_news nhưng chưa nằm trong cache local). Best-effort.
+        if (!shouldSync()) return@withContext null
+        val remote = networkDataSource.loadNewsById(id) ?: return@withContext null
+        runCatching {
+            localDataSource.upsertAll(listOf(remote).toLocal())
+            syncAttachments(listOf(remote))
+        }
+        remote.toExternal()
     }
 
     // ═════════════════════════════════════════════════════
