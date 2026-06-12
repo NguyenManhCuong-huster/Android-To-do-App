@@ -31,7 +31,7 @@ sealed interface AiChatItem {
 /** Wrapper trả về cho repository — reply text + tool call summary + references. */
 data class AiChatResult(
     val reply: String,
-    val toolCalls: List<AiChatItem.ToolCall>,
+    val toolCalls: List<AiToolCall>,
     val references: List<AiReference> = emptyList(),   // ← MỚI 2026-06
 )
 

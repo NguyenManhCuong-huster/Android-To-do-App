@@ -11,7 +11,12 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isVisible
+import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -32,6 +37,7 @@ class AiChatActivity : AppCompatActivity() {
     private lateinit var adapter: AiMessageAdapter
 
     private val chatContext: ChatContext? by lazy { ChatContext.readFrom(intent) }
+    private val resumeSessionId: String? by lazy { intent.getStringExtra(EXTRA_RESUME_SESSION_ID) }
 
     private val attachmentRepo by lazy {
         (application as TodoApplication).container.attachmentRepository
@@ -45,6 +51,8 @@ class AiChatActivity : AppCompatActivity() {
             emailRepository = container.emailRepository,
             newsRepository = container.newsRepository,
             attachmentRepository = container.attachmentRepository,
+            chatHistoryRepository = container.chatHistoryRepository,
+            resumeSessionId = resumeSessionId,
         )
     }
 
@@ -120,6 +128,45 @@ class AiChatActivity : AppCompatActivity() {
         setupRecyclerView()
         setupListeners()
         observeState()
+        setupEdgeToEdge()
+    }
+
+    /**
+     * Edge-to-edge + xử lý IME insets: khi bàn phím hiện, đẩy cả footer (thanh
+     * soạn) và list lên trên để không bị che. Hoạt động đúng trên cả Android 15+
+     * (nơi adjustResize không tự pad cho bàn phím nữa).
+     */
+    private fun setupEdgeToEdge() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowInsetsControllerCompat(window, binding.root).apply {
+            isAppearanceLightStatusBars = true
+            isAppearanceLightNavigationBars = true
+        }
+
+        val root = binding.root
+        val baseLeft = root.paddingLeft
+        val baseTop = root.paddingTop
+        val baseRight = root.paddingRight
+        val baseBottom = root.paddingBottom
+
+        ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            v.updatePadding(
+                left = baseLeft + bars.left,
+                top = baseTop + bars.top,
+                right = baseRight + bars.right,
+                bottom = baseBottom + maxOf(ime.bottom, bars.bottom),
+            )
+            if (ime.bottom > bars.bottom) scrollToBottom()
+            insets
+        }
+        ViewCompat.requestApplyInsets(root)
+    }
+
+    private fun scrollToBottom() {
+        val count = binding.rvMessages.adapter?.itemCount ?: return
+        if (count > 0) binding.rvMessages.post { binding.rvMessages.scrollToPosition(count - 1) }
     }
 
     private fun setupRecyclerView() {
@@ -133,6 +180,9 @@ class AiChatActivity : AppCompatActivity() {
 
     private fun setupListeners() {
         binding.btnBack.setOnClickListener { finish() }
+        binding.btnHistory.setOnClickListener {
+            startActivity(Intent(this, ChatHistoryActivity::class.java))
+        }
         binding.btnSend.setOnClickListener { sendCurrentInput() }
         binding.btnAttach.setOnClickListener {
             // SAF mime "*/*" → cho phép mọi loại file
@@ -235,6 +285,20 @@ class AiChatActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_TASKS_CHANGED = "tasks_changed"
+        const val EXTRA_RESUME_SESSION_ID = "resume_session_id"
+
+        /** Mở lại 1 phiên cụ thể từ màn Lịch sử (resume by id). */
+        fun startResume(ctx: Context, context: ChatContext, sessionId: String) {
+            ctx.startActivity(
+                Intent(ctx, AiChatActivity::class.java).also {
+                    context.putInto(it)
+                    it.putExtra(EXTRA_RESUME_SESSION_ID, sessionId)
+                    // Thay thế chat hiện tại (chat1 -> chat2): xoá chat cũ + màn Lịch sử
+                    // khỏi back stack, back từ chat2 về thẳng màn trước đó.
+                    it.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                },
+            )
+        }
 
         /** Helper cho EmailThreadActivity. */
         fun startEmail(ctx: Context, emailId: String, subject: String?) {

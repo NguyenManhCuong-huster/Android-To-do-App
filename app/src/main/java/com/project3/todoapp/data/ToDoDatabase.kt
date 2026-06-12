@@ -20,6 +20,11 @@ import com.project3.todoapp.data.tasktag.local.LocalTaskTagCrossRef
 import com.project3.todoapp.data.tasktag.local.TaskTagCrossRefDAO
 import com.project3.todoapp.data.userinfo.local.LocalUserInfo
 import com.project3.todoapp.data.userinfo.local.UserInfoDAO
+import com.project3.todoapp.data.ai.local.ChatHistoryDao
+import com.project3.todoapp.data.ai.local.LocalChatMessage
+import com.project3.todoapp.data.ai.local.LocalChatSession
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
  * Bump version 13 → 14: thêm LocalNewsRecommendation entity (cache đề xuất
@@ -38,8 +43,10 @@ import com.project3.todoapp.data.userinfo.local.UserInfoDAO
         LocalNews::class,
         LocalAttachment::class,
         LocalNewsRecommendation::class,        // ← MỚI
+        LocalChatSession::class,               // ← MỚI 2026-06 (lịch sử chat)
+        LocalChatMessage::class,
     ],
-    version = 14,                              // ← BUMP 13 → 14
+    version = 15,                              // ← BUMP 14 → 15 (chat history)
     exportSchema = false,
 )
 abstract class ToDoDatabase : RoomDatabase() {
@@ -52,10 +59,36 @@ abstract class ToDoDatabase : RoomDatabase() {
     abstract fun newsDao():               NewsDAO
     abstract fun attachmentDao():         AttachmentDAO
     abstract fun newsRecommendationDao(): NewsRecommendationDAO     // ← MỚI
+    abstract fun chatHistoryDao():        ChatHistoryDao             // ← MỚI 2026-06
 
     companion object {
         @Volatile
         private var INSTANCE: ToDoDatabase? = null
+
+        /** MỚI 2026-06: tạo bảng chat_sessions + chat_messages (không wipe dữ liệu user). */
+        private val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `chat_sessions` (" +
+                        "`id` TEXT NOT NULL, `contextType` TEXT NOT NULL, " +
+                        "`contextKey` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, " +
+                        "`updatedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `chat_messages` (" +
+                        "`id` TEXT NOT NULL, `sessionId` TEXT NOT NULL, `seq` INTEGER NOT NULL, " +
+                        "`role` TEXT NOT NULL, `content` TEXT NOT NULL, " +
+                        "`referencesJson` TEXT, `attachmentsJson` TEXT, " +
+                        "`createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`), " +
+                        "FOREIGN KEY(`sessionId`) REFERENCES `chat_sessions`(`id`) " +
+                        "ON UPDATE NO ACTION ON DELETE CASCADE)",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_chat_messages_sessionId` " +
+                        "ON `chat_messages` (`sessionId`)",
+                )
+            }
+        }
 
         fun getDatabase(context: Context): ToDoDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -64,6 +97,7 @@ abstract class ToDoDatabase : RoomDatabase() {
                     ToDoDatabase::class.java,
                     "task_database",
                 )
+                    .addMigrations(MIGRATION_14_15)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

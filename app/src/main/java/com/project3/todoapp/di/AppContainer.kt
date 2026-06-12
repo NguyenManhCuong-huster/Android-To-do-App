@@ -5,6 +5,7 @@ import com.project3.todoapp.authentication.AuthManager
 import com.project3.todoapp.data.ToDoDatabase
 import com.project3.todoapp.data.account.network.AccountApi
 import com.project3.todoapp.data.ai.AiRepository
+import com.project3.todoapp.data.ai.ChatHistoryRepository
 import com.project3.todoapp.data.ai.network.AiApi
 import com.project3.todoapp.data.attachment.AttachmentRepository
 import com.project3.todoapp.data.attachment.network.AttachmentApi
@@ -140,6 +141,13 @@ class AppContainer(val context: Context) {
         AiRepository(
             aiApi           = aiApi,
             contentResolver = context.applicationContext.contentResolver,          // ← MỚI
+        )
+    }
+
+    val chatHistoryRepository: ChatHistoryRepository by lazy {
+        ChatHistoryRepository(
+            dao        = database.chatHistoryDao(),
+            dispatcher = Dispatchers.IO,
         )
     }
 

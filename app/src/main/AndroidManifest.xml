@@ -162,6 +162,11 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name=".ui.aichat.ChatHistoryActivity"
+            android:exported="false"
+            android:label="Lịch sử chat" />
+
+        <activity
             android:name=".ui.profile.ProfileActivity"
             android:exported="false"
             android:label="Profile"

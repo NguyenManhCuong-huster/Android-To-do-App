@@ -9,6 +9,7 @@ import com.project3.todoapp.data.ai.AiChatItem
 import com.project3.todoapp.data.ai.AiMessage
 import com.project3.todoapp.data.ai.AiRepository
 import com.project3.todoapp.data.ai.AttachmentRef
+import com.project3.todoapp.data.ai.ChatHistoryRepository
 import com.project3.todoapp.data.attachment.Attachment
 import com.project3.todoapp.data.attachment.AttachmentRepository
 import com.project3.todoapp.data.email.EmailRepository
@@ -20,6 +21,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -31,6 +34,8 @@ class AiChatViewModel(
     private val emailRepository: EmailRepository,
     private val newsRepository: NewsRepository,
     private val attachmentRepository: AttachmentRepository,
+    private val chatHistoryRepository: ChatHistoryRepository,
+    private val resumeSessionId: String? = null,
 ) : ViewModel() {
 
     data class UiState(
@@ -50,16 +55,81 @@ class AiChatViewModel(
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state.asStateFlow()
 
+    /** Phiên chat hiện tại (để lưu/tiếp tục). */
+    private var sessionId: String? = null
+
+    /** Số thứ tự tin nhắn kế tiếp trong phiên (giữ thứ tự khi lưu). */
+    private var seq = 0L
+
+    /** Khoá tạo phiên lazy để tránh tạo trùng khi 2 persist chạy song song. */
+    private val sessionMutex = Mutex()
+
     init {
         bootstrap()
     }
 
     private fun bootstrap() {
         viewModelScope.launch {
+            // CHỈ resume khi mở từ màn Lịch sử (có sessionId cụ thể).
+            val forced = resumeSessionId
+            if (forced != null) {
+                val stored = chatHistoryRepository.loadMessages(forced)
+                sessionId = forced
+                seq = stored.size.toLong()
+                _state.value = _state.value.copy(
+                    items = stored.map { AiChatItem.Message(it) },
+                    isThinking = false,
+                    subtitle = resumeSubtitle(context),
+                    emptyHint = "",
+                )
+                return@launch
+            }
+
+            // Mở MỚI: standalone trống, email/news seed như cũ.
+            // Phiên được tạo LAZY ở lần lưu tin đầu (ensureSession) → không tạo phiên rỗng.
             when (context) {
                 is ChatContext.Email -> bootstrapEmail(context)
                 is ChatContext.News -> bootstrapNews(context)
                 is ChatContext.Standalone -> bootstrapStandalone()
+            }
+        }
+    }
+
+    // ── persistence helpers (MỚI 2026-06) ───────────────────
+    private fun ChatContext.persistType(): String = when (this) {
+        is ChatContext.Email -> ChatHistoryRepository.TYPE_EMAIL
+        is ChatContext.News -> ChatHistoryRepository.TYPE_NEWS
+        ChatContext.Standalone -> ChatHistoryRepository.TYPE_STANDALONE
+    }
+
+    private fun ChatContext.persistKey(): String = when (this) {
+        is ChatContext.Email -> emailId
+        is ChatContext.News -> newsId
+        ChatContext.Standalone -> ChatHistoryRepository.KEY_STANDALONE
+    }
+
+    private suspend fun resumeSubtitle(ctx: ChatContext): String = when (ctx) {
+        is ChatContext.Email -> ctx.subject?.let { "Về email: $it" } ?: "AI Chat"
+        is ChatContext.News -> runCatching { newsRepository.getNews(ctx.newsId) }
+            .getOrNull()?.let { buildNewsSubtitle(it) } ?: "AI Chat"
+
+        ChatContext.Standalone -> "Hỏi tôi bất cứ điều gì"
+    }
+
+    /** Lấy phiên hiện tại, tạo lazy nếu chưa có (lần lưu tin đầu). */
+    private suspend fun ensureSession(): String = sessionMutex.withLock {
+        sessionId ?: chatHistoryRepository
+            .createSession(context.persistType(), context.persistKey())
+            .also { sessionId = it }
+    }
+
+    /** Lưu 1 tin nhắn vào phiên hiện tại (async, không chặn UI). */
+    private fun persist(message: AiMessage) {
+        val s = seq++
+        viewModelScope.launch {
+            runCatching {
+                val sid = ensureSession()
+                chatHistoryRepository.appendMessage(sid, message, s)
             }
         }
     }
@@ -88,6 +158,7 @@ class AiChatViewModel(
             errorMessage = null,
             pendingAttachments = emptyList(),
         )
+        persist(msg)
         callAi(newItems.toMessageHistory())
     }
 
@@ -170,6 +241,7 @@ class AiChatViewModel(
             isThinking = true,
             subtitle = ctx.subject?.let { "Về email: $it" } ?: "AI Chat",
         )
+        persist(userItem.message)
         callAi(listOf(userItem.message))
     }
 
@@ -201,6 +273,7 @@ class AiChatViewModel(
             isThinking = true,
             subtitle = buildNewsSubtitle(news),
         )
+        persist(userItem.message)
         callAi(listOf(userItem.message))
     }
 
@@ -231,7 +304,7 @@ class AiChatViewModel(
 
             result.fold(
                 onSuccess = { res ->
-                    val toolItems = res.toolCalls
+                    val toolItems = res.toolCalls.map { AiToolCallPresenter.present(it) }
                     val replyItem = AiChatItem.Message(
                         AiMessage(
                             role = AiMessage.Role.ASSISTANT,
@@ -239,11 +312,19 @@ class AiChatViewModel(
                             references = res.references,
                         ),
                     )
+                    persist(replyItem.message)
                     val taskCreated = toolItems.any {
                         (it.name == "create_task" || it.name == "create_weekly_tasks") && it.success
                     }
+                    // Ghim kiểu List<AiChatItem> để tránh Kotlin suy ra List<Any>
+                    // khi cộng List<AiChatItem> + List<AiChatItem.ToolCall> (kiểu con).
+                    val updatedItems: List<AiChatItem> = buildList {
+                        addAll(_state.value.items)
+                        addAll(toolItems)
+                        add(replyItem)
+                    }
                     _state.value = _state.value.copy(
-                        items = _state.value.items + toolItems + replyItem,
+                        items = updatedItems,
                         isThinking = false,
                         taskCreatedSignal =
                             if (taskCreated) _state.value.taskCreatedSignal + 1
@@ -353,7 +434,7 @@ class AiChatViewModel(
 
     companion object {
         private const val TAG = "AiChatViewModel"
-        private val DATE_FMT = SimpleDateFormat("dd/MM/yyyy", Locale("vi"))
+        private val DATE_FMT = SimpleDateFormat("dd/MM/yyyy", Locale.forLanguageTag("vi"))
 
         /**
          * Phải khớp với ENV server `ATTACHMENT_TEXT_EXTRACT_EXTS`.
@@ -385,6 +466,8 @@ class AiChatViewModel(
             emailRepository: EmailRepository,
             newsRepository: NewsRepository,
             attachmentRepository: AttachmentRepository,
+            chatHistoryRepository: ChatHistoryRepository,
+            resumeSessionId: String? = null,
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T =
@@ -394,6 +477,8 @@ class AiChatViewModel(
                     emailRepository,
                     newsRepository,
                     attachmentRepository,
+                    chatHistoryRepository,
+                    resumeSessionId,
                 ) as T
         }
     }
