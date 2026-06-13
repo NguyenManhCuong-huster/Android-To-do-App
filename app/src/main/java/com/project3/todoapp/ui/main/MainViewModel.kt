@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import java.util.Calendar
 
-class HomeViewModel(private val taskRepository: TaskRepository) : ViewModel() {
+class MainViewModel(private val taskRepository: TaskRepository) : ViewModel() {
 
     // ── Week navigation ───────────────────────────────────────
     private val _weekOffset = MutableStateFlow(0) // 0 = this week
@@ -52,16 +52,41 @@ class HomeViewModel(private val taskRepository: TaskRepository) : ViewModel() {
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // ── Actions ───────────────────────────────────────────────
-    fun selectDay(dayMillis: Long) { _selectedDayMillis.value = dayMillis }
-    fun goToPrevWeek()             { _weekOffset.value -= 1 }
-    fun goToNextWeek()             { _weekOffset.value += 1 }
+    fun selectDay(dayMillis: Long) {
+        _selectedDayMillis.value = dayMillis
+    }
+
+    fun goToPrevWeek() {
+        _weekOffset.value -= 1
+    }
+
+    fun goToNextWeek() {
+        _weekOffset.value += 1
+    }
+
+    /** Select a day AND navigate the calendar to the week containing that day. */
+    fun jumpToDay(dayMillis: Long) {
+        _selectedDayMillis.value = getDayStart(dayMillis)
+        val thisMonday = getMondayOf(System.currentTimeMillis())
+        val targetMonday = getMondayOf(dayMillis)
+        _weekOffset.value = ((targetMonday - thisMonday) / (7L * 24 * 60 * 60 * 1000)).toInt()
+    }
+
+    private fun getMondayOf(millis: Long): Long =
+        Calendar.getInstance().apply {
+            timeInMillis = millis
+            val dow = get(Calendar.DAY_OF_WEEK)
+            add(Calendar.DAY_OF_MONTH, if (dow == Calendar.SUNDAY) -6 else Calendar.MONDAY - dow)
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
 
     // ── Helpers (internal & accessible from Activity) ─────────
     fun isSameDay(a: Long, b: Long): Boolean {
         val c1 = Calendar.getInstance().apply { timeInMillis = a }
         val c2 = Calendar.getInstance().apply { timeInMillis = b }
-        return c1.get(Calendar.YEAR)       == c2.get(Calendar.YEAR) &&
-               c1.get(Calendar.DAY_OF_YEAR) == c2.get(Calendar.DAY_OF_YEAR)
+        return c1.get(Calendar.YEAR) == c2.get(Calendar.YEAR) &&
+                c1.get(Calendar.DAY_OF_YEAR) == c2.get(Calendar.DAY_OF_YEAR)
     }
 
     fun getDayStart(millis: Long): Long {
@@ -96,7 +121,7 @@ class HomeViewModel(private val taskRepository: TaskRepository) : ViewModel() {
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                    HomeViewModel(taskRepository) as T
+                    MainViewModel(taskRepository) as T
             }
     }
 }

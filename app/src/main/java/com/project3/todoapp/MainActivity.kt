@@ -25,9 +25,9 @@ import com.project3.todoapp.ui.aichat.AiChatActivity
 import com.project3.todoapp.ui.common.requireLogin
 import com.project3.todoapp.ui.email.EmailActivity
 import com.project3.todoapp.ui.grade.GradesActivity
-import com.project3.todoapp.ui.home.CalendarDayAdapter
-import com.project3.todoapp.ui.home.CalendarDayItem
-import com.project3.todoapp.ui.home.HomeDayTaskAdapter
+import com.project3.todoapp.ui.main.CalendarDayAdapter
+import com.project3.todoapp.ui.main.CalendarDayItem
+import com.project3.todoapp.ui.main.MainDayTaskAdapter
 import com.project3.todoapp.ui.news.NewsListActivity
 import com.project3.todoapp.ui.profile.ProfileActivity
 import com.project3.todoapp.ui.settings.SettingsActivity
@@ -55,10 +55,10 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var calendarAdapter: CalendarDayAdapter
-    private lateinit var dayTaskAdapter: HomeDayTaskAdapter
+    private lateinit var dayTaskAdapter: MainDayTaskAdapter
 
-    private val viewModel: HomeViewModel by viewModels {
-        HomeViewModel.provideFactory(
+    private val viewModel: MainViewModel by viewModels {
+        MainViewModel.provideFactory(
             (application as TodoApplication).container.taskRepository
         )
     }
@@ -207,7 +207,7 @@ class MainActivity : AppCompatActivity() {
                     clear()
                     set(year, month, dayOfMonth)
                 }
-                viewModel.selectDay(picked.timeInMillis)
+                viewModel.jumpToDay(picked.timeInMillis)
             },
             cal.get(Calendar.YEAR),
             cal.get(Calendar.MONTH),
@@ -217,7 +217,7 @@ class MainActivity : AppCompatActivity() {
 
     // ── Day task list ─────────────────────────────────────────
     private fun setupDayTaskList() {
-        dayTaskAdapter = HomeDayTaskAdapter { task ->
+        dayTaskAdapter = MainDayTaskAdapter { task ->
             startActivity(
                 Intent(this, TaskDetailActivity::class.java).putExtra("TASK_ID", task.id)
             )

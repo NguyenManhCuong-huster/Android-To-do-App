@@ -1,4 +1,4 @@
-package com.project3.todoapp.ui.home
+package com.project3.todoapp.ui.main
 
 import android.graphics.Paint
 import android.view.LayoutInflater
@@ -16,9 +16,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class HomeDayTaskAdapter(
+class MainDayTaskAdapter(
     private val onTaskClick: (Task) -> Unit
-) : ListAdapter<Task, HomeDayTaskAdapter.TaskViewHolder>(DiffCallback()) {
+) : ListAdapter<Task, MainDayTaskAdapter.TaskViewHolder>(DiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TaskViewHolder {
         val binding = ItemHomeDayTaskBinding.inflate(
@@ -37,13 +37,13 @@ class HomeDayTaskAdapter(
 
         fun bind(task: Task) {
             b.tvTaskTitle.text = task.title
-            b.tvTaskTime.text  = timeFmt.format(Date(task.start))
+            b.tvTaskTime.text = timeFmt.format(Date(task.start))
 
             // Priority color bar
             val color = when (task.priority) {
-                Priority.LOW    -> ContextCompat.getColor(b.root.context, R.color.priority_low)
+                Priority.LOW -> ContextCompat.getColor(b.root.context, R.color.priority_low)
                 Priority.MEDIUM -> ContextCompat.getColor(b.root.context, R.color.priority_medium)
-                Priority.HIGH   -> ContextCompat.getColor(b.root.context, R.color.priority_high)
+                Priority.HIGH -> ContextCompat.getColor(b.root.context, R.color.priority_high)
                 Priority.URGENT -> ContextCompat.getColor(b.root.context, R.color.priority_urgent)
             }
             b.viewPriorityBar.setBackgroundColor(color)
@@ -53,7 +53,8 @@ class HomeDayTaskAdapter(
                 b.tvTaskTitle.paintFlags = b.tvTaskTitle.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
                 b.ivCompleted.visibility = View.VISIBLE
             } else {
-                b.tvTaskTitle.paintFlags = b.tvTaskTitle.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
+                b.tvTaskTitle.paintFlags =
+                    b.tvTaskTitle.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
                 b.ivCompleted.visibility = View.GONE
             }
 
