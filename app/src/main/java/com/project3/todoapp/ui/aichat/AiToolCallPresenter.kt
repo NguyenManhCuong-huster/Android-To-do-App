@@ -32,6 +32,8 @@ object AiToolCallPresenter {
         is Payload.NewsFound -> newsFound(p)
         is Payload.NewsRead -> newsRead(p)
         is Payload.WebSearched -> webSearch(call, p)
+        is Payload.GradeCreated -> gradeCreated(p)
+        is Payload.GradesCreated -> gradesCreated(p)
         null -> fallback(call)
     }
 
@@ -200,6 +202,55 @@ object AiToolCallPresenter {
         )
     }
 
+    // ─────────────────────────────── create_grade ──────────────────────
+    private fun gradeCreated(p: Payload.GradeCreated): AiChatItem.ToolCall {
+        val verb = if (p.action == "updated") "Đã cập nhật điểm" else "Đã ghi điểm"
+        val course = listOf(p.courseCode, p.courseName)
+            .filter { it.isNotBlank() }
+            .joinToString(" – ")
+            .ifBlank { "(học phần)" }
+        val subtitle = listOfNotNull(
+            semesterLabel(p.semester),
+            p.letter?.let { "điểm $it" } ?: "chưa có điểm",
+        ).joinToString(" • ").ifBlank { null }
+        return AiChatItem.ToolCall(
+            name = "create_grade",
+            success = true,
+            title = "$verb: $course",
+            subtitle = subtitle,
+        )
+    }
+
+    // ─────────────────────────────── create_grades ─────────────────────
+    private fun gradesCreated(p: Payload.GradesCreated): AiChatItem.ToolCall {
+        val total = p.createdCount + p.updatedCount
+        val parts = buildList {
+            if (p.createdCount > 0) add("${p.createdCount} mới")
+            if (p.updatedCount > 0) add("${p.updatedCount} cập nhật")
+            if (p.skippedCount > 0) add("${p.skippedCount} bị bỏ qua")
+        }
+        return AiChatItem.ToolCall(
+            name = "create_grades",
+            success = true,
+            title = "Đã ghi điểm $total học phần",
+            subtitle = parts.joinToString(" • ").ifBlank { null },
+        )
+    }
+
+    /** "20251" → "HK1 · 2025". Trả nguyên mã nếu không parse được. */
+    private fun semesterLabel(code: String): String {
+        if (code.length < 5) return if (code.isBlank()) "" else "Kỳ $code"
+        val year = code.substring(0, 4)
+        val term = code.substring(4)
+        val termLabel = when (term) {
+            "1" -> "HK1"
+            "2" -> "HK2"
+            "3" -> "HK hè"
+            else -> "HK$term"
+        }
+        return "$termLabel · $year"
+    }
+
     // ─────────────────── fallback: tool fail không payload / tool lạ ────
     private fun fallback(call: AiToolCall): AiChatItem.ToolCall {
         if (!call.success) {
@@ -210,6 +261,8 @@ object AiToolCallPresenter {
                 "get_email" -> "Không đọc được email"
                 "search_news" -> "Tìm tin tức thất bại"
                 "get_news" -> "Không đọc được tin"
+                "create_grade" -> "Không ghi được điểm"
+                "create_grades" -> "Không ghi được bảng điểm"
                 else -> "Lỗi khi chạy: ${call.name}"
             }
             val knownTool = call.name in KNOWN_FAILING_TOOLS
@@ -268,5 +321,6 @@ object AiToolCallPresenter {
     private val KNOWN_FAILING_TOOLS = setOf(
         "create_task", "create_weekly_tasks",
         "search_emails", "get_email", "search_news", "get_news",
+        "create_grade", "create_grades",
     )
 }

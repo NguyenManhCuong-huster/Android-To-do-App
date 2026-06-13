@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  dialog_edit_grade.xml — form Thêm/Sửa 1 học phần.
+  IDs: etSemester, etCourseCode, etCourseName, etCourseNameEn, etCredits, spinnerGrade
+       (khớp với GradesActivity.showEditDialog).
+  Bọc trong ScrollView để không bị bàn phím che trên màn nhỏ.
+-->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Học kỳ -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Học kỳ (vd: 20251)"
+            android:textColor="#666666"
+            android:textSize="13sp" />
+
+        <EditText
+            android:id="@+id/etSemester"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="20251"
+            android:inputType="number"
+            android:maxLength="6"
+            android:textSize="16sp" />
+
+        <!-- Mã HP -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Mã học phần"
+            android:textColor="#666666"
+            android:textSize="13sp" />
+
+        <EditText
+            android:id="@+id/etCourseCode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="IT4785"
+            android:inputType="textCapCharacters"
+            android:textSize="16sp" />
+
+        <!-- Tên HP -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Tên học phần"
+            android:textColor="#666666"
+            android:textSize="13sp" />
+
+        <EditText
+            android:id="@+id/etCourseName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Phát triển ứng dụng cho thiết bị di động"
+            android:inputType="textCapSentences"
+            android:textSize="16sp" />
+
+        <!-- Tên HP (E) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Tên học phần (tiếng Anh) — không bắt buộc"
+            android:textColor="#666666"
+            android:textSize="13sp" />
+
+        <EditText
+            android:id="@+id/etCourseNameEn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Mobile Programming"
+            android:inputType="textCapWords"
+            android:textSize="16sp" />
+
+        <!-- Hàng: Tín chỉ + Điểm -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Số tín chỉ"
+                    android:textColor="#666666"
+                    android:textSize="13sp" />
+
+                <EditText
+                    android:id="@+id/etCredits"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="2"
+                    android:inputType="number"
+                    android:maxLength="2"
+                    android:textSize="16sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Điểm chữ"
+                    android:textColor="#666666"
+                    android:textSize="13sp" />
+
+                <Spinner
+                    android:id="@+id/spinnerGrade"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

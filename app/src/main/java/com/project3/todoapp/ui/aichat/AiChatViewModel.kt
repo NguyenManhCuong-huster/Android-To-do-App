@@ -14,6 +14,7 @@ import com.project3.todoapp.data.attachment.Attachment
 import com.project3.todoapp.data.attachment.AttachmentRepository
 import com.project3.todoapp.data.email.EmailRepository
 import com.project3.todoapp.data.email.ThreadMessage
+import com.project3.todoapp.data.grade.GradeRepository
 import com.project3.todoapp.data.news.News
 import com.project3.todoapp.data.news.NewsKind
 import com.project3.todoapp.data.news.NewsRepository
@@ -35,6 +36,7 @@ class AiChatViewModel(
     private val newsRepository: NewsRepository,
     private val attachmentRepository: AttachmentRepository,
     private val chatHistoryRepository: ChatHistoryRepository,
+    private val gradeRepository: GradeRepository,
     private val resumeSessionId: String? = null,
 ) : ViewModel() {
 
@@ -316,6 +318,14 @@ class AiChatViewModel(
                     val taskCreated = toolItems.any {
                         (it.name == "create_task" || it.name == "create_weekly_tasks") && it.success
                     }
+                    val gradeCreated = toolItems.any {
+                        (it.name == "create_grade" || it.name == "create_grades") && it.success
+                    }
+                    if (gradeCreated) {
+                        viewModelScope.launch {
+                            runCatching { gradeRepository.sync() }
+                        }
+                    }
                     // Ghim kiểu List<AiChatItem> để tránh Kotlin suy ra List<Any>
                     // khi cộng List<AiChatItem> + List<AiChatItem.ToolCall> (kiểu con).
                     val updatedItems: List<AiChatItem> = buildList {
@@ -457,6 +467,8 @@ class AiChatViewModel(
             dùng tool read_attachment để đọc nội dung khi user yêu cầu.
             Nếu họ yêu cầu tạo task / nhắc lịch học / lịch thi, dùng tool create_task
             với end_time hợp lý.
+            Nếu họ muốn lưu điểm / kết quả học tập: 1 môn → dùng tool create_grade,
+            nhiều môn (bảng điểm, paste danh sách) → dùng tool create_grades (1 lần).
             Luôn trả lời bằng tiếng Việt.
         """.trimIndent()
 
@@ -467,6 +479,7 @@ class AiChatViewModel(
             newsRepository: NewsRepository,
             attachmentRepository: AttachmentRepository,
             chatHistoryRepository: ChatHistoryRepository,
+            gradeRepository: GradeRepository,
             resumeSessionId: String? = null,
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
@@ -478,6 +491,7 @@ class AiChatViewModel(
                     newsRepository,
                     attachmentRepository,
                     chatHistoryRepository,
+                    gradeRepository,
                     resumeSessionId,
                 ) as T
         }

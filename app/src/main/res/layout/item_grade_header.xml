@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  item_grade_header.xml — tiêu đề nhóm cho mỗi học kỳ trong danh sách điểm.
+  Hiển thị: tên học kỳ (trái) + GPA & số tín chỉ của kỳ (phải).
+  IDs: tvSemester, tvSemesterGpa  (khớp với GradeAdapter.HeaderVH).
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="14dp"
+    android:layout_marginBottom="4dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingHorizontal="20dp">
+
+    <TextView
+        android:id="@+id/tvSemester"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:fontFamily="sans-serif-medium"
+        android:text="HK1 · 2025"
+        android:textColor="#2E7D32"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvSemesterGpa"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="GPA: 3.50 · 14 TC"
+        android:textColor="#666666"
+        android:textSize="13sp" />
+</LinearLayout>

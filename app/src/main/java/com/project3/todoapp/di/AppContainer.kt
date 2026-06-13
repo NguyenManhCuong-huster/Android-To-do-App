@@ -12,6 +12,10 @@ import com.project3.todoapp.data.attachment.network.AttachmentApi
 import com.project3.todoapp.data.email.EmailRepository
 import com.project3.todoapp.data.email.network.EmailApi
 import com.project3.todoapp.data.email.network.EmailRemoteDataSource
+import com.project3.todoapp.data.grade.DefaultGradeRepository
+import com.project3.todoapp.data.grade.GradeRepository
+import com.project3.todoapp.data.grade.network.GradeApi
+import com.project3.todoapp.data.grade.network.NetworkGradeSource
 import com.project3.todoapp.data.news.DefaultNewsRepository
 import com.project3.todoapp.data.news.NewsRepository
 import com.project3.todoapp.data.news.network.NewsApi
@@ -40,6 +44,7 @@ import com.project3.todoapp.notification.TaskNotificationManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import com.project3.todoapp.data.grade.network.NetworkDataSource    as GradeNetworkDataSource
 import com.project3.todoapp.data.news.network.NetworkDataSource     as NewsNetwork
 import com.project3.todoapp.data.tag.network.NetworkDataSource      as TagNetworkDataSource
 import com.project3.todoapp.data.userinfo.network.NetworkDataSource as UserInfoNetworkDataSource
@@ -47,9 +52,7 @@ import com.project3.todoapp.data.userinfo.network.NetworkDataSource as UserInfoN
 /**
  * AppContainer — DI thủ công.
  *
- * THAY ĐỔI 2026-05-31:
- *  - AiRepository giờ depend ContentResolver để upload file (đọc bytes từ
- *    content Uri user pick qua SAF).
+ * THAY ĐỔI 2026-06: thêm GradeRepository (kết quả học tập) — cùng pattern Tag.
  */
 class AppContainer(val context: Context) {
 
@@ -62,6 +65,7 @@ class AppContainer(val context: Context) {
     val authApi: AuthApi by lazy { apiClient.create(AuthApi::class.java) }
     val taskApi: TaskApi by lazy { apiClient.create(TaskApi::class.java) }
     val tagApi: TagApi by lazy { apiClient.create(TagApi::class.java) }
+    val gradeApi: GradeApi by lazy { apiClient.create(GradeApi::class.java) }              // ← MỚI
     val emailApi: EmailApi by lazy { apiClient.create(EmailApi::class.java) }
     val accountApi: AccountApi by lazy { apiClient.create(AccountApi::class.java) }
     val userInfoApi: UserInfoApi by lazy { apiClient.create(UserInfoApi::class.java) }
@@ -80,6 +84,7 @@ class AppContainer(val context: Context) {
     // ── 5. NETWORK DATA SOURCES ────────────────────────
     private val taskNetworkDataSource by lazy { TaskNetworkDataSource(taskApi) }
     private val tagNetworkDataSource: TagNetworkDataSource by lazy { NetworkTagSource(tagApi) }
+    private val gradeNetworkDataSource: GradeNetworkDataSource by lazy { NetworkGradeSource(gradeApi) } // ← MỚI
     private val emailNetworkDataSource by lazy { EmailRemoteDataSource(emailApi) }
     private val userInfoNetworkDataSource: UserInfoNetworkDataSource by lazy {
         UserInfoRemoteDataSource(userInfoApi, authApi)
@@ -102,6 +107,17 @@ class AppContainer(val context: Context) {
         DefaultTagRepository(
             tagDao = database.tagDao(),
             networkDataSource = tagNetworkDataSource,
+            authManager = authManager,
+            networkManager = networkManager,
+            scope = appScope,
+            dispatcher = Dispatchers.IO,
+        )
+    }
+
+    val gradeRepository: GradeRepository by lazy {                                          // ← MỚI
+        DefaultGradeRepository(
+            gradeDao = database.gradeDao(),
+            networkDataSource = gradeNetworkDataSource,
             authManager = authManager,
             networkManager = networkManager,
             scope = appScope,
@@ -140,7 +156,7 @@ class AppContainer(val context: Context) {
     val aiRepository: AiRepository by lazy {
         AiRepository(
             aiApi           = aiApi,
-            contentResolver = context.applicationContext.contentResolver,          // ← MỚI
+            contentResolver = context.applicationContext.contentResolver,
         )
     }
 

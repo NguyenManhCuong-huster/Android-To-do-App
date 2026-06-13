@@ -8,6 +8,8 @@ import com.project3.todoapp.data.attachment.local.AttachmentDAO
 import com.project3.todoapp.data.attachment.local.LocalAttachment
 import com.project3.todoapp.data.email.local.EmailDAO
 import com.project3.todoapp.data.email.local.LocalEmail
+import com.project3.todoapp.data.grade.local.GradeDAO
+import com.project3.todoapp.data.grade.local.LocalGrade
 import com.project3.todoapp.data.news.local.LocalNews
 import com.project3.todoapp.data.news.local.LocalNewsRecommendation
 import com.project3.todoapp.data.news.local.NewsDAO
@@ -27,11 +29,9 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
- * Bump version 13 → 14: thêm LocalNewsRecommendation entity (cache đề xuất
- * news từ server).
+ * Bump version 15 → 16: thêm LocalGrade entity (kết quả học tập — điểm từng học phần).
  *
- * fallbackToDestructiveMigration giữ nguyên — wipe sẽ trigger re-sync,
- * an toàn vì recommendation sync 1 chiều từ server.
+ * MIGRATION_15_16 tạo bảng `grade` (không wipe dữ liệu user).
  */
 @Database(
     entities = [
@@ -42,11 +42,12 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         LocalUserInfo::class,
         LocalNews::class,
         LocalAttachment::class,
-        LocalNewsRecommendation::class,        // ← MỚI
-        LocalChatSession::class,               // ← MỚI 2026-06 (lịch sử chat)
+        LocalNewsRecommendation::class,
+        LocalChatSession::class,
         LocalChatMessage::class,
+        LocalGrade::class,                         // ← MỚI 2026-06 (kết quả học tập)
     ],
-    version = 15,                              // ← BUMP 14 → 15 (chat history)
+    version = 16,                                  // ← BUMP 15 → 16 (grade)
     exportSchema = false,
 )
 abstract class ToDoDatabase : RoomDatabase() {
@@ -58,8 +59,9 @@ abstract class ToDoDatabase : RoomDatabase() {
     abstract fun userInfoDao():           UserInfoDAO
     abstract fun newsDao():               NewsDAO
     abstract fun attachmentDao():         AttachmentDAO
-    abstract fun newsRecommendationDao(): NewsRecommendationDAO     // ← MỚI
-    abstract fun chatHistoryDao():        ChatHistoryDao             // ← MỚI 2026-06
+    abstract fun newsRecommendationDao(): NewsRecommendationDAO
+    abstract fun chatHistoryDao():        ChatHistoryDao
+    abstract fun gradeDao():              GradeDAO                             // ← MỚI
 
     companion object {
         @Volatile
@@ -90,6 +92,21 @@ abstract class ToDoDatabase : RoomDatabase() {
             }
         }
 
+        /** MỚI 2026-06: tạo bảng grade (điểm học phần). Không đụng dữ liệu cũ. */
+        private val MIGRATION_15_16 = object : Migration(15, 16) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `grade` (" +
+                        "`id` TEXT NOT NULL, `semester` TEXT NOT NULL, " +
+                        "`courseCode` TEXT NOT NULL, `courseName` TEXT NOT NULL, " +
+                        "`courseNameEn` TEXT NOT NULL, `credits` INTEGER NOT NULL, " +
+                        "`letterGrade` TEXT NOT NULL, `modTime` INTEGER NOT NULL, " +
+                        "`isDeleted` INTEGER NOT NULL, `isDirty` INTEGER NOT NULL, " +
+                        "PRIMARY KEY(`id`))",
+                )
+            }
+        }
+
         fun getDatabase(context: Context): ToDoDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -97,7 +114,7 @@ abstract class ToDoDatabase : RoomDatabase() {
                     ToDoDatabase::class.java,
                     "task_database",
                 )
-                    .addMigrations(MIGRATION_14_15)
+                    .addMigrations(MIGRATION_14_15, MIGRATION_15_16)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

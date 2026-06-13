@@ -24,6 +24,7 @@ import com.project3.todoapp.databinding.ActivityMainBinding
 import com.project3.todoapp.ui.aichat.AiChatActivity
 import com.project3.todoapp.ui.common.requireLogin
 import com.project3.todoapp.ui.email.EmailActivity
+import com.project3.todoapp.ui.grade.GradesActivity
 import com.project3.todoapp.ui.home.CalendarDayAdapter
 import com.project3.todoapp.ui.home.CalendarDayItem
 import com.project3.todoapp.ui.home.HomeDayTaskAdapter
@@ -239,6 +240,11 @@ class MainActivity : AppCompatActivity() {
         binding.cardTags.setOnClickListener {
             startActivity(Intent(this, TagsActivity::class.java))
         }
+        // Kết quả học tập: offline-first như Tags → mở trực tiếp, không bắt đăng nhập.
+        // (Đồng bộ network chỉ chạy khi đã đăng nhập + có mạng — xử lý trong repository.)
+        binding.cardGrades.setOnClickListener {
+            startActivity(Intent(this, GradesActivity::class.java))
+        }
         binding.cardEmail.setOnClickListener {
             requireLoginThenStart(EmailActivity::class.java)
         }
@@ -334,3 +340,5 @@ class MainActivity : AppCompatActivity() {
             SimpleDateFormat("EEEE, d MMMM", Locale.getDefault()).format(Date(day))
     }
 }
+
+

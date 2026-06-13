@@ -88,6 +88,22 @@ data class AiToolCall(
             val query: String?,
             val count: Int,
         ) : Payload
+
+        /** create_grade — ghi điểm 1 học phần. */
+        data class GradeCreated(
+            val action: String,        // "created" | "updated"
+            val semester: String,
+            val courseCode: String,
+            val courseName: String,
+            val letter: String?,       // null = chưa có điểm
+        ) : Payload
+
+        /** create_grades — ghi điểm nhiều học phần trong 1 lần. */
+        data class GradesCreated(
+            val createdCount: Int,
+            val updatedCount: Int,
+            val skippedCount: Int,
+        ) : Payload
     }
 
     /** Loại task (raw từ server). */

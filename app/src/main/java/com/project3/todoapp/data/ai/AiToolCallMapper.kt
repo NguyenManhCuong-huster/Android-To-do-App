@@ -36,6 +36,8 @@ object AiToolCallMapper {
             "get_news" -> if (success) parseNewsRead(result) else null
             // web_search: giữ payload cả khi fail để Presenter còn query mà hiển thị.
             "web_search" -> parseWebSearch(result, dto.args)
+            "create_grade" -> if (success) parseGradeCreated(result) else null
+            "create_grades" -> if (success) parseGradesCreated(result) else null
             else -> null
         }
 
@@ -138,6 +140,27 @@ object AiToolCallMapper {
                 ?.takeIf { it.isNotBlank() },
             count = (result["count"] as? Number)?.toInt() ?: 0,
         )
+
+    @Suppress("UNCHECKED_CAST")
+    private fun parseGradeCreated(result: Map<String, Any?>): Payload.GradeCreated {
+        val g = result["grade"] as? Map<String, Any?> ?: emptyMap()
+        return Payload.GradeCreated(
+            action = (result["action"] as? String).orEmpty(),
+            semester = (g["semester"] as? String).orEmpty(),
+            courseCode = (g["course_code"] as? String).orEmpty(),
+            courseName = (g["course_name"] as? String).orEmpty(),
+            letter = (g["letter_grade"] as? String)?.takeIf { it.isNotBlank() },
+        )
+    }
+
+    private fun parseGradesCreated(result: Map<String, Any?>): Payload.GradesCreated {
+        val skipped = (result["skipped"] as? List<*>)?.size ?: 0
+        return Payload.GradesCreated(
+            createdCount = (result["created_count"] as? Number)?.toInt() ?: 0,
+            updatedCount = (result["updated_count"] as? Number)?.toInt() ?: 0,
+            skippedCount = skipped,
+        )
+    }
 
     @Suppress("UNCHECKED_CAST")
     private fun parseTags(raw: Any?): List<TagRef> =

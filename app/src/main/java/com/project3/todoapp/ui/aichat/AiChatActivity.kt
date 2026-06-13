@@ -52,6 +52,7 @@ class AiChatActivity : AppCompatActivity() {
             newsRepository = container.newsRepository,
             attachmentRepository = container.attachmentRepository,
             chatHistoryRepository = container.chatHistoryRepository,
+            gradeRepository = container.gradeRepository,
             resumeSessionId = resumeSessionId,
         )
     }
