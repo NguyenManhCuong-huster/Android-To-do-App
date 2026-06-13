@@ -45,6 +45,10 @@ class AuthManager(
         GoogleSignIn.getClient(context, gso)
     }
 
+    // Cooldown 30s giữa các lần verify session để tránh spam network
+    private var lastSessionCheckMs = 0L
+    private val SESSION_CHECK_COOLDOWN_MS = 30_000L
+
     fun getGoogleAccount(): GoogleSignInAccount? = GoogleSignIn.getLastSignedInAccount(context)
     fun isUserLoggedIn(): Boolean = tokenStore.hasToken()
     fun getSignInIntent(): Intent = googleSignInClient.signInIntent
@@ -52,6 +56,7 @@ class AuthManager(
     /**
      * Gọi sau khi GoogleSignIn trả về account.
      * Exchange idToken → JWT server, lưu vào TokenStore.
+     * Nếu server từ chối → sign out khỏi Google luôn để lần sau hiện lại picker.
      */
     fun handleSignInResult(account: GoogleSignInAccount, onDone: (Boolean, String?) -> Unit) {
         val idToken = account.idToken
@@ -74,18 +79,57 @@ class AuthManager(
                 val jwt = res.data?.token
                 if (res.success && !jwt.isNullOrEmpty()) {
                     tokenStore.save(jwt)
+                    lastSessionCheckMs = System.currentTimeMillis()
                     onDone(true, null)
                 } else {
+                    // Server từ chối → sign out Google để lần sau hiện picker chọn tài khoản
+                    googleSignInClient.signOut()
                     onDone(false, res.message ?: "Đăng nhập thất bại")
                 }
             } catch (e: Exception) {
+                // Lỗi mạng/server → sign out Google để lần sau hiện picker
+                googleSignInClient.signOut()
                 onDone(false, e.message ?: "Lỗi kết nối server")
             }
         }
     }
 
+    /**
+     * Xác minh session vẫn còn hợp lệ bằng cách gọi /api/auth/me.
+     * Nếu thất bại (server tắt hoặc token hết hạn) → xóa token, trả về false.
+     * Có cooldown 30s để tránh gọi network liên tục khi onResume.
+     */
+    fun verifySession(onResult: (Boolean) -> Unit) {
+        if (!tokenStore.hasToken()) {
+            onResult(false)
+            return
+        }
+        val now = System.currentTimeMillis()
+        if (now - lastSessionCheckMs < SESSION_CHECK_COOLDOWN_MS) {
+            // Còn trong cooldown → dùng trạng thái đã cached
+            onResult(true)
+            return
+        }
+        scope.launch {
+            val isValid = try {
+                val res = withContext(Dispatchers.IO) { authApi.me() }
+                res.success
+            } catch (_: Exception) {
+                false
+            }
+            if (isValid) {
+                lastSessionCheckMs = System.currentTimeMillis()
+            } else {
+                tokenStore.clear()
+            }
+            // scope là Dispatchers.Main nên callback gọi trên Main thread
+            onResult(isValid)
+        }
+    }
+
     fun signOut(onComplete: () -> Unit) {
         tokenStore.clear()
+        lastSessionCheckMs = 0L  // reset để lần verify tiếp không dùng cache cũ
         googleSignInClient.signOut().addOnCompleteListener { onComplete() }
     }
 }

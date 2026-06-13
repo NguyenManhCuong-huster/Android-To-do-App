@@ -102,7 +102,8 @@
         <activity
             android:name=".ui.tasks.TasksActivity"
             android:exported="false"
-            android:label="Tasks" />
+            android:label="Tasks"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".ui.taskdetail.TaskDetailActivity"
@@ -176,7 +177,8 @@
             android:name=".ui.settings.SettingsActivity"
             android:exported="false"
             android:label="Settings"
-            android:parentActivityName=".MainActivity" />
+            android:parentActivityName=".MainActivity"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".ui.grade.GradesActivity"

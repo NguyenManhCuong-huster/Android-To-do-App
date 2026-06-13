@@ -1,11 +1,18 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.TodoApp" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
     </style>
 
-    <style name="Theme.TodoApp" parent="Base.Theme.TodoApp" />
+    <style name="Theme.TodoApp" parent="Base.Theme.TodoApp">
+        <!--
+          API 35+ (Android 15) bắt buộc edge-to-edge cho tất cả app.
+          Dòng dưới opt-out để hệ thống tự xử lý insets như API < 35,
+          tránh nội dung bị che bởi status bar / navigation bar trên mọi màn hình.
+        -->
+        <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
+    </style>
 
     <style name="Theme.TodoApp.Fullscreen" parent="Theme.TodoApp">
         <item name="android:actionBarStyle">@style/Widget.Theme.TodoApp.ActionBar.Fullscreen</item>

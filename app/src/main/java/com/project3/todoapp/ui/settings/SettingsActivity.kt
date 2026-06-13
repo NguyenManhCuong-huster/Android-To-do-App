@@ -9,8 +9,8 @@ import com.project3.todoapp.databinding.ActivitySettingsBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.net.InetSocketAddress
-import java.net.Socket
+import java.net.HttpURLConnection
+import java.net.URL
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -23,70 +23,76 @@ class SettingsActivity : AppCompatActivity() {
 
         val config = (application as TodoApplication).container.serverConfig
 
-        // Populate fields from current config
         binding.etServerHost.setText(config.getHost())
         binding.etServerPort.setText(config.getPort().toString())
-        binding.tvCurrentUrl.text = "Current: ${config.getBaseUrl()}"
+        binding.tvCurrentUrl.text = config.getBaseUrl()
 
         binding.btnBack.setOnClickListener { finish() }
 
         binding.btnSave.setOnClickListener {
-            val host = binding.etServerHost.text.toString().trim()
+            val host    = binding.etServerHost.text.toString().trim()
             val portStr = binding.etServerPort.text.toString().trim()
 
+            binding.tilServerHost.error = null
+            binding.tilServerPort.error = null
+
             if (host.isBlank()) {
-                binding.etServerHost.error = "Host is required"
+                binding.tilServerHost.error = "Vui lòng nhập host"
                 return@setOnClickListener
             }
             val port = portStr.toIntOrNull()
             if (port == null || port !in 1..65535) {
-                binding.etServerPort.error = "Valid port (1–65535)"
+                binding.tilServerPort.error = "Port hợp lệ: 1–65535"
                 return@setOnClickListener
             }
 
             config.setFromHostPort(host, port)
-            binding.tvCurrentUrl.text = "Current: ${config.getBaseUrl()}"
-            Toast.makeText(this, "Saved — ${config.getBaseUrl()}", Toast.LENGTH_SHORT).show()
+            binding.tvCurrentUrl.text = config.getBaseUrl()
+            Toast.makeText(this, "Đã lưu — ${config.getBaseUrl()}", Toast.LENGTH_SHORT).show()
         }
 
         binding.btnTest.setOnClickListener {
-            val host = binding.etServerHost.text.toString().trim()
+            val host    = binding.etServerHost.text.toString().trim()
             val portStr = binding.etServerPort.text.toString().trim()
-            val port = portStr.toIntOrNull() ?: 3000
+            val port    = portStr.toIntOrNull() ?: 3000
 
             binding.btnTest.isEnabled = false
-            binding.tvTestResult.text = "Testing…"
+            binding.tvTestResult.text = "Đang kiểm tra kết nối…"
+            binding.tvTestResult.setTextColor(getColor(android.R.color.darker_gray))
 
             lifecycleScope.launch {
                 val ok = withContext(Dispatchers.IO) { testConnection(host, port) }
                 binding.btnTest.isEnabled = true
                 if (ok) {
-                    binding.tvTestResult.text = "✅ Connected to $host:$port"
+                    binding.tvTestResult.text = "✅ Server đang hoạt động tại $host:$port"
                     binding.tvTestResult.setTextColor(getColor(android.R.color.holo_green_dark))
                 } else {
-                    binding.tvTestResult.text = "❌ Cannot reach $host:$port\n" +
-                            "• Check same WiFi\n• Firewall allows port $port\n• Server is running"
+                    binding.tvTestResult.text = "❌ Không kết nối được $host:$port\n" +
+                            "• Kiểm tra cùng WiFi\n• Firewall cho phép port $port\n• Server đang chạy"
                     binding.tvTestResult.setTextColor(getColor(android.R.color.holo_red_dark))
                 }
             }
         }
 
         binding.btnReset.setOnClickListener {
-            (application as TodoApplication).container.serverConfig.reset()
-            val config2 = (application as TodoApplication).container.serverConfig
-            binding.etServerHost.setText(config2.getHost())
-            binding.etServerPort.setText(config2.getPort().toString())
-            binding.tvCurrentUrl.text = "Current: ${config2.getBaseUrl()}"
-            Toast.makeText(this, "Reset to default", Toast.LENGTH_SHORT).show()
+            config.reset()
+            binding.etServerHost.setText(config.getHost())
+            binding.etServerPort.setText(config.getPort().toString())
+            binding.tvCurrentUrl.text = config.getBaseUrl()
+            Toast.makeText(this, "Đã đặt lại mặc định", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun testConnection(host: String, port: Int): Boolean {
         return try {
-            Socket().use { socket ->
-                socket.connect(InetSocketAddress(host, port), 3000)
-                true
-            }
+            val conn = URL("http://$host:$port/api/health").openConnection() as HttpURLConnection
+            conn.connectTimeout = 3000
+            conn.readTimeout    = 3000
+            conn.requestMethod  = "GET"
+            conn.connect()
+            val code = conn.responseCode
+            conn.disconnect()
+            code in 200..299
         } catch (_: Exception) { false }
     }
 }

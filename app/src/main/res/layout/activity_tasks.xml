@@ -51,15 +51,17 @@
         android:orientation="horizontal"
         app:layout_constraintGuide_begin="140dp" /> <!-- Tăng khoảng cách -->
 
-    <!-- Danh sách Task -->
+    <!-- Danh sách Task — bottom phải dừng trên thanh nút, không để chồng lên -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
+        android:clipToPadding="false"
+        android:paddingBottom="8dp"
 
         app:layout_constraintTop_toBottomOf="@id/rvTagFilter"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/tagsButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
@@ -91,22 +93,8 @@
         app:tint="@color/light_blue_600"
 
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/authButton"
-        app:layout_constraintStart_toEndOf="@id/tagsButton" />
-
-    <ImageView
-        android:id="@+id/authButton"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:contentDescription="@string/acc_button_desc"
-        android:layout_marginBottom="16dp"
-        android:padding="8dp"
-        android:src="@drawable/ic_account"
-        app:tint="@color/light_blue_600"
-
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/filterButton"
-        app:layout_constraintStart_toEndOf="@id/syncButton" />
+        app:layout_constraintStart_toEndOf="@id/tagsButton" />
 
     <ImageView
         android:id="@+id/filterButton"
@@ -120,7 +108,7 @@
 
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/addTaskButton"
-        app:layout_constraintStart_toEndOf="@id/authButton" />
+        app:layout_constraintStart_toEndOf="@id/syncButton" />
 
     <ImageView
         android:id="@+id/addTaskButton"

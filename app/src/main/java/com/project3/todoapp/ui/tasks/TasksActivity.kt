@@ -1,14 +1,11 @@
 package com.project3.todoapp.ui.tasks
 
 import android.content.Intent
-import android.content.res.ColorStateList
-import android.graphics.Color
 import android.os.Bundle
 import android.view.Menu
 import android.widget.PopupMenu
 import android.widget.SearchView
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
@@ -38,17 +35,6 @@ class TasksActivity : AppCompatActivity() {
         )
     }
 
-    // Bộ xử lý kết quả đăng nhập
-    private val signInLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) {
-                updateAuthButtonUI()
-                viewModel.refresh()
-                Toast.makeText(this, getString(R.string.notifi_login_success), Toast.LENGTH_SHORT)
-                    .show()
-            }
-        }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val container = (application as TodoApplication).container
@@ -56,7 +42,6 @@ class TasksActivity : AppCompatActivity() {
         binding = ActivityTasksBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        updateAuthButtonUI()
         setupAdapters()
         setupListeners()
         observeData()
@@ -107,8 +92,6 @@ class TasksActivity : AppCompatActivity() {
                 .show()
             viewModel.refresh()
         }
-
-        binding.authButton.setOnClickListener { showAuthMenu() }
 
         // Filter button bây giờ chứa cả Lọc Trạng Thái và Sắp Xếp
         binding.filterButton.setOnClickListener { showFilterAndSortMenu() }
@@ -181,35 +164,4 @@ class TasksActivity : AppCompatActivity() {
         popup.show()
     }
 
-    private fun updateAuthButtonUI() {
-        val authManager = (application as TodoApplication).container.authManager
-        val color =
-            if (authManager.isUserLoggedIn()) Color.GREEN else getColor(R.color.light_blue_600)
-        binding.authButton.imageTintList = ColorStateList.valueOf(color)
-    }
-
-    private fun showAuthMenu() {
-        val popup = PopupMenu(this, binding.authButton)
-        val authManager = (application as TodoApplication).container.authManager
-
-        if (authManager.isUserLoggedIn()) {
-            val account = authManager.getGoogleAccount()
-            popup.menu.add(Menu.NONE, 1, 1, getString(R.string.logout, account?.email))
-            popup.setOnMenuItemClickListener {
-                authManager.signOut {
-                    updateAuthButtonUI()
-                    Toast.makeText(this, getString(R.string.notifi_logged_out), Toast.LENGTH_SHORT)
-                        .show()
-                }
-                true
-            }
-        } else {
-            popup.menu.add(Menu.NONE, 2, 2, getString(R.string.login))
-            popup.setOnMenuItemClickListener {
-                signInLauncher.launch(authManager.getSignInIntent())
-                true
-            }
-        }
-        popup.show()
-    }
 }

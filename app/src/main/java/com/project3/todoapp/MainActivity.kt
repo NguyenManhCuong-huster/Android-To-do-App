@@ -34,8 +34,10 @@ import com.project3.todoapp.ui.settings.SettingsActivity
 import com.project3.todoapp.ui.tags.TagsActivity
 import com.project3.todoapp.ui.taskdetail.TaskDetailActivity
 import com.project3.todoapp.ui.tasks.TasksActivity
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -108,7 +110,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        updateAuthButtonUI()
+        val auth = (application as TodoApplication).container.authManager
+        auth.verifySession { updateAuthButtonUI() }
     }
 
     // ── Settings ──────────────────────────────────────────────
@@ -167,11 +170,45 @@ class MainActivity : AppCompatActivity() {
         } else {
             popup.menu.add(Menu.NONE, 2, 2, getString(R.string.login))
             popup.setOnMenuItemClickListener {
-                signInLauncher.launch(auth.getSignInIntent())
+                checkServerThenLogin()
                 true
             }
         }
         popup.show()
+    }
+
+    private fun checkServerThenLogin() {
+        val config = (application as TodoApplication).container.serverConfig
+        val host = config.getHost()
+        val port = config.getPort()
+
+        lifecycleScope.launch {
+            val ok = withContext(Dispatchers.IO) { pingServerHealth(host, port) }
+            if (ok) {
+                val auth = (application as TodoApplication).container.authManager
+                signInLauncher.launch(auth.getSignInIntent())
+            } else {
+                Toast.makeText(
+                    this@MainActivity,
+                    "Không kết nối được server ($host:$port).\nKiểm tra địa chỉ trong Cài đặt.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    private fun pingServerHealth(host: String, port: Int): Boolean {
+        return try {
+            val url = java.net.URL("http://$host:$port/api/health")
+            val conn = url.openConnection() as java.net.HttpURLConnection
+            conn.connectTimeout = 3000
+            conn.readTimeout = 3000
+            conn.requestMethod = "GET"
+            conn.connect()
+            val code = conn.responseCode
+            conn.disconnect()
+            code in 200..299
+        } catch (_: Exception) { false }
     }
 
     // ── Calendar ──────────────────────────────────────────────
