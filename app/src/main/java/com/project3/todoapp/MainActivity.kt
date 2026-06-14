@@ -1,5 +1,6 @@
 package com.project3.todoapp
 
+import com.project3.todoapp.ui.common.applyWindowInsets
 import android.app.DatePickerDialog
 import android.content.Intent
 import android.content.res.ColorStateList
@@ -22,6 +23,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.project3.todoapp.databinding.ActivityMainBinding
 import com.project3.todoapp.ui.aichat.AiChatActivity
+import com.project3.todoapp.ui.aichat.ChatHistoryActivity
 import com.project3.todoapp.ui.common.requireLogin
 import com.project3.todoapp.ui.email.EmailActivity
 import com.project3.todoapp.ui.grade.GradesActivity
@@ -96,6 +98,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyWindowInsets(binding.root, binding.appBar)
 
         (application as TodoApplication).container.permissionManager.checkAndRequestPermissions(this)
 
@@ -147,7 +150,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateAuthButtonUI() {
         val color = if ((application as TodoApplication).container.authManager.isUserLoggedIn())
-            Color.GREEN else getColor(R.color.light_blue_600)
+            Color.GREEN else Color.WHITE
         binding.btnAuth.imageTintList = ColorStateList.valueOf(color)
     }
 
@@ -277,10 +280,19 @@ class MainActivity : AppCompatActivity() {
         binding.cardTags.setOnClickListener {
             startActivity(Intent(this, TagsActivity::class.java))
         }
-        // Kết quả học tập: offline-first như Tags → mở trực tiếp, không bắt đăng nhập.
-        // (Đồng bộ network chỉ chạy khi đã đăng nhập + có mạng — xử lý trong repository.)
         binding.cardGrades.setOnClickListener {
-            startActivity(Intent(this, GradesActivity::class.java))
+            requireLoginThenStart(GradesActivity::class.java)
+        }
+        binding.cardChatHistory.setOnClickListener {
+            requireLogin(
+                context = this,
+                onRequestSignIn = {
+                    val auth = (application as TodoApplication).container.authManager
+                    signInLauncher.launch(auth.getSignInIntent())
+                },
+            ) {
+                startActivity(Intent(this, ChatHistoryActivity::class.java))
+            }
         }
         binding.cardEmail.setOnClickListener {
             requireLoginThenStart(EmailActivity::class.java)

@@ -1,5 +1,6 @@
 package com.project3.todoapp.ui.news
 
+import com.project3.todoapp.ui.common.applyWindowInsets
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
@@ -56,6 +57,7 @@ class NewsDetailActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityNewsDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyWindowInsets(binding.root, binding.header)
 
         if (newsId.isBlank()) {
             Toast.makeText(this, "Thiếu news_id", Toast.LENGTH_SHORT).show()

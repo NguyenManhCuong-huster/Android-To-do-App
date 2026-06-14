@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  bg_news_kind_chip_plan.xml — chip nền cho kind=PLAN (cam).
-  Màu khác NEWS để user phân biệt nhanh giữa thông báo và lịch học.
+  bg_news_kind_chip_plan.xml — chip nền cho kind=PLAN.
+  Dùng dark red thay cam để phân biệt với NEWS (bright red).
 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#F57C00" />
+    <solid android:color="@color/hust_red_dark" />
     <corners android:radius="10dp" />
 </shape>

@@ -1,5 +1,6 @@
 package com.project3.todoapp.ui.news
 
+import com.project3.todoapp.ui.common.applyWindowInsets
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.viewModels
@@ -42,6 +43,7 @@ class NewsListActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityNewsListBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyWindowInsets(binding.root, binding.header)
 
         setupTabs()
         setupRecyclerView()

@@ -109,7 +109,8 @@
             android:name=".ui.taskdetail.TaskDetailActivity"
             android:exported="false"
             android:label="Task Detail"
-            android:parentActivityName=".ui.tasks.TasksActivity" />
+            android:parentActivityName=".ui.tasks.TasksActivity"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".ui.createtask.CreateTaskActivity"
@@ -171,7 +172,8 @@
             android:name=".ui.profile.ProfileActivity"
             android:exported="false"
             android:label="Profile"
-            android:parentActivityName=".MainActivity" />
+            android:parentActivityName=".MainActivity"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".ui.settings.SettingsActivity"

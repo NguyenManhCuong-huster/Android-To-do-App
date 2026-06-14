@@ -18,7 +18,7 @@ import java.util.Locale
  */
 class ChatHistoryAdapter(
     private val onTap: (ChatSessionSummary) -> Unit,
-    private val onLongPress: (ChatSessionSummary) -> Unit,
+    private val onDelete: (ChatSessionSummary) -> Unit,
 ) : ListAdapter<ChatSessionSummary, ChatHistoryAdapter.VH>(Diff()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
@@ -38,7 +38,8 @@ class ChatHistoryAdapter(
             b.tvTime.text = TIME_FMT.format(Date(s.updatedAt))
 
             b.root.setOnClickListener { onTap(s) }
-            b.root.setOnLongClickListener { onLongPress(s); true }
+            b.root.setOnLongClickListener { onDelete(s); true }
+            b.btnDelete.setOnClickListener { onDelete(s) }
         }
 
         private fun titleFor(s: ChatSessionSummary): String {

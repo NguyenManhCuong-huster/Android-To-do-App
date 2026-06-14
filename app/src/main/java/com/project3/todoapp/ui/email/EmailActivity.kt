@@ -1,5 +1,6 @@
 package com.project3.todoapp.ui.email
 
+import com.project3.todoapp.ui.common.applyWindowInsets
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -40,6 +41,7 @@ class EmailActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityEmailBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyWindowInsets(binding.root, binding.appBar)
 
         setupRecyclerView()
         setupListeners()

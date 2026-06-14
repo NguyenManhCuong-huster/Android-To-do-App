@@ -1,5 +1,6 @@
 package com.project3.todoapp.ui.createtask
 
+import com.project3.todoapp.ui.common.applyWindowInsets
 import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
@@ -43,6 +44,7 @@ class CreateTaskActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityCreateTaskBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyWindowInsets(binding.root, binding.appBar)
 
         setupUI()
         setupListeners()

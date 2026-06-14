@@ -1,5 +1,6 @@
 package com.project3.todoapp.ui.emailthread
 
+import com.project3.todoapp.ui.common.applyWindowInsets
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
@@ -52,6 +53,7 @@ class EmailThreadActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityEmailThreadBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyWindowInsets(binding.root, binding.header)
 
         if (emailId.isBlank()) {
             Toast.makeText(this, "Thiếu email_id", Toast.LENGTH_SHORT).show()

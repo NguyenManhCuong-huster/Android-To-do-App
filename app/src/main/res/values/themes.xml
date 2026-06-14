@@ -1,16 +1,17 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
     <style name="Base.Theme.TodoApp" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/hust_red</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">@color/hust_red_light</item>
+        <item name="colorOnPrimaryContainer">@color/hust_red_dark</item>
+        <item name="colorSecondary">@color/hust_red_dark</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSurface">@color/white</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="android:colorBackground">@color/surface</item>
     </style>
 
     <style name="Theme.TodoApp" parent="Base.Theme.TodoApp">
-        <!--
-          API 35+ (Android 15) bắt buộc edge-to-edge cho tất cả app.
-          Dòng dưới opt-out để hệ thống tự xử lý insets như API < 35,
-          tránh nội dung bị che bởi status bar / navigation bar trên mọi màn hình.
-        -->
         <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
     </style>
 
@@ -21,7 +22,7 @@
     </style>
 
     <style name="ThemeOverlay.TodoApp.FullscreenContainer" parent="">
-        <item name="fullscreenBackgroundColor">@color/white</item>
-        <item name="fullscreenTextColor">@color/black</item>
+        <item name="fullscreenBackgroundColor">@color/surface</item>
+        <item name="fullscreenTextColor">@color/text_primary</item>
     </style>
 </resources>

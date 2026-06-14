@@ -2,6 +2,6 @@
 <!-- Card News: xanh nhạt như NEWS chip nhưng pastel hơn để hài hoà với bg_card_email. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#E1F5FE" />
-    <corners android:radius="12dp" />
+    <solid android:color="#FFFFFF" />
+    <corners android:radius="14dp" />
 </shape>

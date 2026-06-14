@@ -1,23 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- HUST Brand Colors (tông chính: 60% trắng · 30% đỏ HUST · 10% đen) -->
+    <color name="hust_red">#E31837</color>
+    <color name="hust_red_dark">#A81020</color>
+    <color name="hust_red_light">#FFEBEE</color>
+
+    <!-- Base -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="light_blue_600">#FF039BE5</color>
-    <color name="light_blue_900">#FF01579B</color>
-    <color name="light_blue_A200">#FF40C4FF</color>
-    <color name="light_blue_A400">#FF00B0FF</color>
-    <color name="black_overlay">#66000000</color>
-    <color name="red">#F44336</color>
+    <color name="surface">#F5F5F5</color>
+    <color name="divider">#EEEEEE</color>
     <color name="light_gray">#E2E2E2</color>
+    <color name="black_overlay">#66000000</color>
 
-    <!-- Màu Priority -->
-    <color name="priority_low">#4CAF50</color>     <!-- Xanh lá -->
-    <color name="priority_medium">#FFC107</color>  <!-- Vàng/Cam nhạt -->
-    <color name="priority_high">#FF9800</color>    <!-- Cam -->
-    <color name="priority_urgent">#F44336</color>  <!-- Đỏ -->
+    <!-- Text -->
+    <color name="text_primary">#1A1A1A</color>
+    <color name="text_secondary">#666666</color>
+    <color name="text_hint">#AAAAAA</color>
 
-    <!-- Màu nền Tag -->
-    <color name="tag_background">#E0E0E0</color>
+    <!--
+      Legacy color aliases — remapped to HUST red so mọi nơi dùng
+      @color/light_blue_600 hay @color/red tự động thành đỏ HUST.
+    -->
+    <color name="light_blue_600">#E31837</color>
+    <color name="light_blue_900">#A81020</color>
+    <color name="light_blue_A200">#FFCDD2</color>
+    <color name="light_blue_A400">#EF9A9A</color>
+    <color name="red">#E31837</color>
+
+    <!-- Priority Colors (giữ nguyên semantic) -->
+    <color name="priority_low">#4CAF50</color>
+    <color name="priority_medium">#FFC107</color>
+    <color name="priority_high">#FF9800</color>
+    <color name="priority_urgent">#E31837</color>
+
+    <!-- Tag Colors -->
+    <color name="tag_background">#F0F0F0</color>
     <color name="tag_text">#333333</color>
-
 </resources>

@@ -2,6 +2,6 @@
 <!-- Card AI Chat: tím nhạt — màu thường gắn với "AI/intelligence" trong UI. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#F3E5F5" />
-    <corners android:radius="12dp" />
+    <solid android:color="#FFFFFF" />
+    <corners android:radius="14dp" />
 </shape>

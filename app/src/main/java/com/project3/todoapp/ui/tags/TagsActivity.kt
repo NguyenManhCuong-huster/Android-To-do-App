@@ -1,5 +1,6 @@
 package com.project3.todoapp.ui.tags
 
+import com.project3.todoapp.ui.common.applyWindowInsets
 import android.app.AlertDialog
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
@@ -31,6 +32,7 @@ class TagsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityTagsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyWindowInsets(binding.root, binding.appBar)
 
         setupRecyclerView()
         observeData()

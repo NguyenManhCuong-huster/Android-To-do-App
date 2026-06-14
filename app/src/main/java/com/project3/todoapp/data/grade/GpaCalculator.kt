@@ -105,14 +105,5 @@ object GpaCalculator {
      * Đổi mã học kỳ "20251" → nhãn ngắn "K1 2025-26" để vẽ trục x.
      * Kỳ: 1 = HK1, 2 = HK2, 3 = HK hè.
      */
-    fun semesterLabel(code: String): String {
-        if (code.length < 5) return code
-        val year = code.substring(0, 4).toIntOrNull() ?: return code
-        return when (code.substring(4)) {
-            "1"  -> "HK1·$year"
-            "2"  -> "HK2·$year"
-            "3"  -> "Hè·$year"
-            else -> code
-        }
-    }
+    fun semesterLabel(code: String): String = code
 }

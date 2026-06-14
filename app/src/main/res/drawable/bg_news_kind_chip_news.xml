@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  bg_news_kind_chip_news.xml — chip nền cho kind=NEWS (xanh dương).
--->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#1976D2" />
+    <solid android:color="@color/hust_red" />
     <corners android:radius="10dp" />
 </shape>

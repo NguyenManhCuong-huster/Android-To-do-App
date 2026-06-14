@@ -2,15 +2,15 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="32dp"
-    android:background="#F4F6F9"
+    android:background="@color/surface"
     android:orientation="vertical">
 
-    <!-- TOP BAR: Back + Title + Logout -->
+    <!-- ══ TOP APP BAR ══ -->
     <LinearLayout
+        android:id="@+id/appBar"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:background="@android:color/white"
+        android:layout_height="wrap_content"
+        android:background="@color/hust_red"
         android:elevation="4dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
@@ -23,15 +23,17 @@
             android:layout_height="48dp"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:contentDescription="Back"
-            android:src="@android:drawable/ic_menu_revert" />
+            android:src="@android:drawable/ic_menu_revert"
+            app:tint="#FFFFFF"
+            xmlns:app="http://schemas.android.com/apk/res-auto" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:fontFamily="sans-serif-medium"
-            android:text="Profile"
-            android:textColor="#222222"
+            android:text="Hồ sơ"
+            android:textColor="#FFFFFF"
             android:textSize="17sp" />
 
         <Button
@@ -39,12 +41,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Đăng xuất"
-            android:textColor="#E53935"
+            android:textColor="#FFCDD2"
             style="@style/Widget.AppCompat.Button.Borderless" />
-
     </LinearLayout>
 
-    <!-- SCROLLABLE CONTENT -->
+    <!-- ══ SCROLLABLE CONTENT ══ -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
@@ -62,13 +63,13 @@
                 android:orientation="vertical"
                 android:paddingBottom="32dp">
 
-                <!-- Loading -->
                 <ProgressBar
                     android:id="@+id/progressBar"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
                     android:layout_marginTop="48dp"
+                    android:indeterminateTint="@color/hust_red"
                     android:visibility="gone" />
 
                 <!-- Account email header -->
@@ -82,12 +83,14 @@
                     android:padding="16dp">
 
                     <ImageView
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
                         android:background="@drawable/bg_avatar_circle"
                         android:contentDescription="Avatar"
-                        android:padding="8dp"
-                        android:src="@drawable/ic_account" />
+                        android:padding="10dp"
+                        android:src="@drawable/ic_account"
+                        app:tint="@color/hust_red"
+                        xmlns:app="http://schemas.android.com/apk/res-auto" />
 
                     <TextView
                         android:id="@+id/tvEmail"
@@ -95,12 +98,10 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="12dp"
                         android:layout_weight="1"
-                        android:textColor="#333333"
+                        android:textColor="@color/text_primary"
                         android:textSize="14sp" />
-
                 </LinearLayout>
 
-                <!-- No profile yet -->
                 <TextView
                     android:id="@+id/tvNoProfile"
                     android:layout_width="match_parent"
@@ -109,7 +110,7 @@
                     android:gravity="center"
                     android:paddingHorizontal="24dp"
                     android:text="Chưa có thông tin sinh viên.\nBấm Sửa để thêm."
-                    android:textColor="#888888"
+                    android:textColor="@color/text_hint"
                     android:textSize="13sp"
                     android:visibility="gone" />
 
@@ -117,7 +118,6 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="0dp"
                     android:layout_marginTop="12dp"
                     android:background="@android:color/white"
                     android:elevation="1dp"
@@ -131,21 +131,20 @@
                         android:layout_height="wrap_content"
                         android:fontFamily="sans-serif-medium"
                         android:text="Thông tin sinh viên"
-                        android:textColor="#333333"
+                        android:textColor="@color/hust_red"
                         android:textSize="14sp" />
 
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:layout_marginVertical="10dp"
-                        android:background="#EEEEEE" />
+                        android:background="@color/divider" />
 
-                    <!-- MSSV -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="MSSV"
-                        android:textColor="#555555"
+                        android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
 
                     <EditText
@@ -158,14 +157,13 @@
                         android:inputType="number"
                         android:textSize="15sp" />
 
-                    <!-- Full name -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
                         android:text="Họ và tên"
-                        android:textColor="#555555"
-                        android:textSize="12sp"
-                        android:layout_marginTop="8dp" />
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
 
                     <EditText
                         android:id="@+id/etFullName"
@@ -177,14 +175,13 @@
                         android:inputType="textPersonName|textCapWords"
                         android:textSize="15sp" />
 
-                    <!-- Date of birth -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
                         android:text="Ngày sinh"
-                        android:textColor="#555555"
-                        android:textSize="12sp"
-                        android:layout_marginTop="8dp" />
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
 
                     <EditText
                         android:id="@+id/etDateOfBirth"
@@ -196,14 +193,13 @@
                         android:inputType="date"
                         android:textSize="15sp" />
 
-                    <!-- Phone -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
                         android:text="Số điện thoại"
-                        android:textColor="#555555"
-                        android:textSize="12sp"
-                        android:layout_marginTop="8dp" />
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
 
                     <EditText
                         android:id="@+id/etPhone"
@@ -215,14 +211,13 @@
                         android:inputType="phone"
                         android:textSize="15sp" />
 
-                    <!-- School -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
                         android:text="Trường / Viện"
-                        android:textColor="#555555"
-                        android:textSize="12sp"
-                        android:layout_marginTop="8dp" />
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
 
                     <EditText
                         android:id="@+id/etSchool"
@@ -234,14 +229,13 @@
                         android:inputType="textCapSentences"
                         android:textSize="15sp" />
 
-                    <!-- Major -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
                         android:text="Ngành"
-                        android:textColor="#555555"
-                        android:textSize="12sp"
-                        android:layout_marginTop="8dp" />
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
 
                     <EditText
                         android:id="@+id/etMajor"
@@ -253,14 +247,13 @@
                         android:inputType="textCapSentences"
                         android:textSize="15sp" />
 
-                    <!-- Class name -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
                         android:text="Lớp"
-                        android:textColor="#555555"
-                        android:textSize="12sp"
-                        android:layout_marginTop="8dp" />
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
 
                     <EditText
                         android:id="@+id/etClassName"
@@ -272,14 +265,13 @@
                         android:inputType="textCapSentences"
                         android:textSize="15sp" />
 
-                    <!-- Course -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
                         android:text="Khóa"
-                        android:textColor="#555555"
-                        android:textSize="12sp"
-                        android:layout_marginTop="8dp" />
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
 
                     <EditText
                         android:id="@+id/etCourse"
@@ -290,10 +282,9 @@
                         android:hint="K66"
                         android:inputType="textCapCharacters"
                         android:textSize="15sp" />
-
                 </LinearLayout>
 
-                <!-- Action buttons DƯỚI form -->
+                <!-- Action buttons -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -302,16 +293,14 @@
                     android:gravity="end"
                     android:orientation="horizontal">
 
-                    <!-- Edit mode: OFF — chỉ hiện Sửa -->
                     <Button
                         android:id="@+id/btnEdit"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:backgroundTint="@color/hust_red"
                         android:text="Sửa thông tin"
-                        android:backgroundTint="#0DC7D0"
                         android:textColor="@android:color/white" />
 
-                    <!-- Edit mode: ON — hiện Huỷ + Lưu -->
                     <Button
                         android:id="@+id/btnCancel"
                         android:layout_width="wrap_content"
@@ -322,17 +311,17 @@
                         style="@style/Widget.AppCompat.Button.Borderless" />
 
                     <FrameLayout
+                        android:id="@+id/layoutSave"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:visibility="gone"
-                        android:id="@+id/layoutSave">
+                        android:visibility="gone">
 
                         <Button
                             android:id="@+id/btnSave"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:backgroundTint="@color/hust_red"
                             android:text="Lưu"
-                            android:backgroundTint="#0DC7D0"
                             android:textColor="@android:color/white" />
 
                         <ProgressBar
@@ -340,15 +329,13 @@
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:layout_gravity="center"
+                            android:indeterminateTint="#FFFFFF"
                             android:visibility="gone" />
-
                     </FrameLayout>
-
                 </LinearLayout>
 
             </LinearLayout>
         </ScrollView>
-
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
 </LinearLayout>

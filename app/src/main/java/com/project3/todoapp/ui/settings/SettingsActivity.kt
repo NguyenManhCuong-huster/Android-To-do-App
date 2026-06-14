@@ -3,6 +3,7 @@ package com.project3.todoapp.ui.settings
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.project3.todoapp.ui.common.applyWindowInsets
 import androidx.lifecycle.lifecycleScope
 import com.project3.todoapp.TodoApplication
 import com.project3.todoapp.databinding.ActivitySettingsBinding
@@ -20,8 +21,9 @@ class SettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyWindowInsets(binding.root, binding.toolbar)
 
-        val config = (application as TodoApplication).container.serverConfig
+        val config =(application as TodoApplication).container.serverConfig
 
         binding.etServerHost.setText(config.getHost())
         binding.etServerPort.setText(config.getPort().toString())

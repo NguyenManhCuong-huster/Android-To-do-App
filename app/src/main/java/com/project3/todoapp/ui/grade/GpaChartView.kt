@@ -27,6 +27,13 @@ class GpaChartView @JvmOverloads constructor(
 ) : View(context, attrs, defStyle) {
 
     private var points: List<SemesterPoint> = emptyList()
+    private var modeShowGpa = true
+    private var modeShowCpa = true
+
+    fun setMode(gpa: Boolean, cpa: Boolean) {
+        modeShowGpa = gpa
+        modeShowCpa = cpa
+    }
 
     private val density = resources.displayMetrics.density
     private fun dp(v: Float) = v * density
@@ -46,16 +53,16 @@ class GpaChartView @JvmOverloads constructor(
     }
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#607D8B")
-        textSize = dp(11f)
+        textSize = dp(9f)
     }
     private val emptyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#90A4AE")
-        textSize = dp(14f)
+        textSize = dp(12f)
         textAlign = Paint.Align.CENTER
     }
 
-    private val gpaColor = Color.parseColor("#0DC7D0") // cyan (giống Tasks)
-    private val cpaColor = Color.parseColor("#E65100") // cam (giống Tags)
+    private val gpaColor = Color.parseColor("#E31837") // HUST red
+    private val cpaColor = Color.parseColor("#A81020") // HUST red dark
 
     private fun linePaint(c: Int) = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = c
@@ -161,8 +168,7 @@ class GpaChartView @JvmOverloads constructor(
             }
         }
 
-        // CPA vẽ trước (nền), GPA vẽ sau (nổi hơn)
-        drawSeries(cpaColor) { it.cpa }
-        drawSeries(gpaColor) { it.gpa }
+        if (modeShowCpa) drawSeries(cpaColor) { it.cpa }
+        if (modeShowGpa) drawSeries(gpaColor) { it.gpa }
     }
 }

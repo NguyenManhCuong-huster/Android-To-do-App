@@ -1,19 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="32dp">
+    android:background="@color/surface"
+    android:orientation="vertical">
 
+    <!-- ══ TOP APP BAR — HUST Red ══ -->
+    <LinearLayout
+        android:id="@+id/appBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/hust_red"
+        android:elevation="4dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="4dp">
+
+        <ImageView
+            android:id="@+id/btnCancel"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/cancel_button_desc"
+            android:padding="12dp"
+            android:src="@drawable/ic_cancel"
+            app:tint="#FFFFFF" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="sans-serif-medium"
+            android:text="Tạo công việc"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp" />
+
+        <ImageView
+            android:id="@+id/btnSave"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/save_task_button_desc"
+            android:padding="12dp"
+            android:src="@drawable/ic_done"
+            app:tint="#FFFFFF" />
+    </LinearLayout>
+
+    <!-- ══ SCROLLABLE FORM ══ -->
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:fillViewport="true">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
             android:padding="16dp">
 
             <!-- THỜI GIAN -->
@@ -21,12 +64,14 @@
                 android:id="@+id/tvStart"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
-                android:autoSizeMaxTextSize="20sp"
-                android:autoSizeMinTextSize="12sp"
+                android:autoSizeMaxTextSize="16sp"
+                android:autoSizeMinTextSize="11sp"
                 android:autoSizeStepGranularity="1sp"
                 android:autoSizeTextType="uniform"
                 android:gravity="center_vertical"
                 android:text="@string/tv_start_time"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp"
                 app:layout_constraintBottom_toBottomOf="@id/etStart"
                 app:layout_constraintEnd_toStartOf="@id/glTime"
                 app:layout_constraintStart_toStartOf="parent"
@@ -36,12 +81,14 @@
                 android:id="@+id/tvEnd"
                 android:layout_width="0dp"
                 android:layout_height="0dp"
-                android:autoSizeMaxTextSize="20sp"
-                android:autoSizeMinTextSize="12sp"
+                android:autoSizeMaxTextSize="16sp"
+                android:autoSizeMinTextSize="11sp"
                 android:autoSizeStepGranularity="1sp"
                 android:autoSizeTextType="uniform"
                 android:gravity="center_vertical"
                 android:text="@string/tv_end_time"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp"
                 app:layout_constraintBottom_toBottomOf="@id/etEnd"
                 app:layout_constraintEnd_toStartOf="@id/glTime"
                 app:layout_constraintStart_toStartOf="parent"
@@ -61,10 +108,11 @@
                 android:background="@drawable/task_border"
                 android:clickable="true"
                 android:focusable="false"
-                android:gravity="top|start"
+                android:gravity="center_vertical"
                 android:hint="@string/enter_start_time"
                 android:inputType="text"
-                app:layout_constraintEnd_toStartOf="@id/btnCancel"
+                android:textSize="13sp"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="@id/glTime"
                 app:layout_constraintTop_toTopOf="parent" />
 
@@ -72,42 +120,17 @@
                 android:id="@+id/etEnd"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="6dp"
                 android:background="@drawable/task_border"
                 android:clickable="true"
                 android:focusable="false"
-                android:gravity="top|start"
+                android:gravity="center_vertical"
                 android:hint="@string/enter_end_time"
                 android:inputType="text"
-                app:layout_constraintEnd_toStartOf="@id/btnCancel"
+                android:textSize="13sp"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="@id/glTime"
                 app:layout_constraintTop_toBottomOf="@id/etStart" />
-
-            <ImageView
-                android:id="@+id/btnCancel"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@android:color/transparent"
-                android:contentDescription="@string/cancel_button_desc"
-                android:padding="4dp"
-                android:src="@drawable/ic_cancel"
-                app:layout_constraintBottom_toTopOf="@id/barrierEnd"
-                app:layout_constraintEnd_toStartOf="@id/btnSave"
-                app:layout_constraintTop_toTopOf="parent"
-                app:tint="@color/red" />
-
-            <ImageView
-                android:id="@+id/btnSave"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@android:color/transparent"
-                android:contentDescription="@string/save_task_button_desc"
-                android:padding="4dp"
-                android:src="@drawable/ic_done"
-                app:layout_constraintBottom_toTopOf="@id/barrierEnd"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:tint="@color/light_blue_600" />
 
             <androidx.constraintlayout.widget.Barrier
                 android:id="@+id/barrierEnd"
@@ -122,21 +145,26 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="Location"
-                android:textSize="16sp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Địa điểm"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/etEnd" />
+                app:layout_constraintTop_toBottomOf="@id/barrierEnd" />
 
             <EditText
                 android:id="@+id/etLocation"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
+                android:layout_marginTop="6dp"
                 android:background="@drawable/task_border"
                 android:drawableStart="@drawable/ic_location_on"
                 android:drawablePadding="8dp"
+                android:drawableTint="@color/hust_red"
                 android:gravity="center_vertical"
-                android:hint="Enter location (Coming soon)"
+                android:hint="Nhập địa điểm"
                 android:paddingStart="8dp"
+                android:textSize="13sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tvLocation" />
@@ -146,9 +174,11 @@
                 android:id="@+id/tvPriority"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="Priority"
-                android:textSize="16sp"
+                android:layout_marginTop="14dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Độ ưu tiên"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/etLocation" />
 
@@ -156,7 +186,7 @@
                 android:id="@+id/rgPriority"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="6dp"
                 android:orientation="horizontal"
                 android:weightSum="4"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -169,9 +199,9 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:buttonTint="@color/priority_low"
-                    android:text="Low"
+                    android:text="Thấp"
                     android:textColor="@color/priority_low"
-                    android:textSize="12sp" />
+                    android:textSize="11sp" />
 
                 <RadioButton
                     android:id="@+id/rbMedium"
@@ -180,9 +210,9 @@
                     android:layout_weight="1"
                     android:buttonTint="@color/priority_medium"
                     android:checked="true"
-                    android:text="Med"
+                    android:text="TB"
                     android:textColor="@color/priority_medium"
-                    android:textSize="12sp" />
+                    android:textSize="11sp" />
 
                 <RadioButton
                     android:id="@+id/rbHigh"
@@ -190,9 +220,9 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:buttonTint="@color/priority_high"
-                    android:text="High"
+                    android:text="Cao"
                     android:textColor="@color/priority_high"
-                    android:textSize="12sp" />
+                    android:textSize="11sp" />
 
                 <RadioButton
                     android:id="@+id/rbUrgent"
@@ -200,19 +230,21 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:buttonTint="@color/priority_urgent"
-                    android:text="Urgent"
+                    android:text="Khẩn"
                     android:textColor="@color/priority_urgent"
-                    android:textSize="12sp" />
+                    android:textSize="11sp" />
             </RadioGroup>
 
-            <!-- TAGS SECTION -->
+            <!-- TAGS -->
             <TextView
                 android:id="@+id/tvTags"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="Tags"
-                android:textSize="16sp"
+                android:layout_marginTop="14dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Nhãn"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/rgPriority" />
 
@@ -220,7 +252,7 @@
                 android:id="@+id/layoutTagSelection"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="6dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tvTags">
@@ -234,9 +266,8 @@
                     android:src="@drawable/ic_add"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
-                    app:tint="@color/light_blue_600" />
+                    app:tint="@color/hust_red" />
 
-                <!-- RecyclerView: Wrap Content, Max Height 80dp -->
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvSelectedTags"
                     android:layout_width="0dp"
@@ -249,18 +280,18 @@
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toEndOf="@id/btnAddTag"
                     app:layout_constraintTop_toTopOf="parent" />
-
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <!-- TITLE & DESCRIPTION -->
+            <!-- TITLE -->
             <TextView
                 android:id="@+id/tvTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginVertical="4dp"
                 android:layout_marginTop="16dp"
+                android:fontFamily="sans-serif-medium"
                 android:text="@string/task_title"
-                android:textSize="24sp"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/layoutTagSelection" />
 
@@ -268,22 +299,26 @@
                 android:id="@+id/etTitle"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
+                android:layout_marginTop="6dp"
                 android:background="@drawable/task_border"
-                android:gravity="top|start"
+                android:gravity="center_vertical"
                 android:hint="@string/enter_title"
                 android:inputType="textMultiLine"
+                android:textSize="14sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tvTitle" />
 
+            <!-- DESCRIPTION -->
             <TextView
                 android:id="@+id/tvDescription"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginVertical="4dp"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="12dp"
+                android:fontFamily="sans-serif-medium"
                 android:text="@string/task_description"
-                android:textSize="20sp"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/etTitle" />
 
@@ -291,17 +326,19 @@
                 android:id="@+id/etDescription"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginVertical="8dp"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="8dp"
                 android:background="@drawable/task_border"
                 android:gravity="top|start"
                 android:hint="@string/enter_description"
                 android:inputType="textMultiLine"
-                android:minLines="3"
-                app:layout_constraintStart_toStartOf="parent"
+                android:minLines="4"
+                android:textSize="14sp"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tvDescription" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
-
     </ScrollView>
-</androidx.constraintlayout.widget.ConstraintLayout>
+
+</LinearLayout>

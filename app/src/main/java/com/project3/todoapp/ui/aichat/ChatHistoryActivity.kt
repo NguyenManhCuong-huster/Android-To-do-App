@@ -3,6 +3,7 @@ package com.project3.todoapp.ui.aichat
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.project3.todoapp.ui.common.applyWindowInsets
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -31,8 +32,9 @@ class ChatHistoryActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityChatHistoryBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyWindowInsets(binding.root, binding.appBar)
 
-        adapter = ChatHistoryAdapter(onTap = ::openSession, onLongPress = ::confirmDelete)
+        adapter = ChatHistoryAdapter(onTap = ::openSession, onDelete = ::confirmDelete)
         binding.rvSessions.layoutManager = LinearLayoutManager(this)
         binding.rvSessions.adapter = adapter
 

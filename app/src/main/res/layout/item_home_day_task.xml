@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    item_home_day_task.xml
-    ┌─────────────────────────────────────────────┐
-    │ ▌ priority  │ Title                  ✓ done │
-    │    bar      │ 09:00                         │
-    └─────────────────────────────────────────────┘
+  item_home_day_task.xml
+  ┌──────────────────────────────────────────────┐
+  │ ▌ priority  │ Title                   ✓ done │
+  │    bar      │ 09:00–10:00                    │
+  └──────────────────────────────────────────────┘
 -->
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?android:attr/selectableItemBackground"
@@ -17,13 +16,13 @@
     android:paddingVertical="8dp"
     android:paddingEnd="12dp">
 
-    <!-- Priority color bar (4dp wide) -->
+    <!-- Priority color bar (4dp wide, color set by adapter) -->
     <View
         android:id="@+id/viewPriorityBar"
         android:layout_width="4dp"
         android:layout_height="36dp"
         android:layout_marginEnd="12dp"
-        android:background="#0DC7D0" />
+        android:background="@color/hust_red" />
 
     <!-- Title + time -->
     <LinearLayout
@@ -40,7 +39,7 @@
             android:fontFamily="sans-serif-medium"
             android:maxLines="1"
             android:text="Task title"
-            android:textColor="#333333"
+            android:textColor="@color/text_primary"
             android:textSize="14sp" />
 
         <TextView
@@ -49,19 +48,20 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
             android:text="09:00"
-            android:textColor="#888888"
+            android:textColor="@color/text_secondary"
             android:textSize="12sp" />
-
     </LinearLayout>
 
-    <!-- Check mark — shown only when task is completed -->
+    <!-- Check mark — hiện khi task done -->
     <ImageView
         android:id="@+id/ivCompleted"
         android:layout_width="18dp"
         android:layout_height="18dp"
         android:layout_marginStart="8dp"
-        android:contentDescription="Completed"
+        android:contentDescription="Đã hoàn thành"
         android:src="@drawable/ic_done"
-        android:visibility="gone" />
+        app:tint="@color/hust_red"
+        android:visibility="gone"
+        xmlns:app="http://schemas.android.com/apk/res-auto" />
 
 </LinearLayout>

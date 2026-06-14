@@ -1,5 +1,6 @@
 package com.project3.todoapp.ui.taskdetail
 
+import com.project3.todoapp.ui.common.applyWindowInsets
 import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
@@ -43,6 +44,7 @@ class TaskDetailActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityTaskDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyWindowInsets(binding.root, binding.appBar)
 
         val taskId = intent.getStringExtra("TASK_ID") ?: run {
             Toast.makeText(this, "Task ID missing", Toast.LENGTH_SHORT).show()

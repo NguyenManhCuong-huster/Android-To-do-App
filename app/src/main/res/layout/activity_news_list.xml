@@ -1,56 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  activity_news_list.xml — màn list News + Plan từ HUST CTT.
-
-  ┌──────────────────────────────────┐
-  │ ← Tin tức HUST                   │ Header
-  ├──────────────────────────────────┤
-  │ [Tất cả] [Tin tức] [Kế hoạch]    │ TabLayout filter
-  ├──────────────────────────────────┤
-  │ ┌──────────────────────────────┐ │
-  │ │ [Kind chip] [Tag]   dd/MM/yy │ │ Item card
-  │ │ Title bài viết                │ │
-  │ │ Summary preview (2 dòng)     │ │
-  │ └──────────────────────────────┘ │
-  │ ...                              │
-  └──────────────────────────────────┘
--->
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F6F8"
-    android:paddingVertical="32dp">
+    android:background="@color/surface">
 
-    <!-- Header -->
+    <!-- ══ HEADER ══ -->
     <LinearLayout
         android:id="@+id/header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@android:color/white"
-        android:elevation="2dp"
+        android:background="@color/hust_red"
+        android:elevation="4dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="12dp"
+        android:paddingHorizontal="4dp"
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageButton
             android:id="@+id/btnBack"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:contentDescription="Back"
-            android:src="@android:drawable/ic_menu_revert" />
+            android:src="@android:drawable/ic_menu_revert"
+            app:tint="#FFFFFF" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="4dp"
             android:layout_weight="1"
             android:fontFamily="sans-serif-medium"
             android:text="Tin tức HUST"
-            android:textColor="#222222"
+            android:textColor="#FFFFFF"
             android:textSize="16sp" />
     </LinearLayout>
 
@@ -60,9 +45,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@android:color/white"
-        app:tabIndicatorColor="#1976D2"
-        app:tabSelectedTextColor="#1976D2"
-        app:tabTextColor="#666666"
+        android:elevation="2dp"
+        app:tabIndicatorColor="@color/hust_red"
+        app:tabSelectedTextColor="@color/hust_red"
+        app:tabTextColor="@color/text_secondary"
         app:layout_constraintTop_toBottomOf="@id/header" />
 
     <!-- SwipeRefresh + RecyclerView -->
@@ -80,8 +66,7 @@
             android:clipToPadding="false"
             android:paddingHorizontal="12dp"
             android:paddingVertical="8dp"
-            tools:listitem="@layout/item_news"
-            xmlns:tools="http://schemas.android.com/tools" />
+            tools:listitem="@layout/item_news" />
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <!-- Empty state -->
@@ -90,7 +75,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Chưa có tin nào — kéo xuống để làm mới."
-        android:textColor="#999999"
+        android:textColor="@color/text_hint"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.project3.todoapp.ui.common.applyWindowInsets
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -46,6 +47,10 @@ class GradesActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityGradesBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyWindowInsets(binding.root, binding.appBar)
+
+        binding.chartGpa.setMode(gpa = true, cpa = false)
+        binding.chartCpa.setMode(gpa = false, cpa = true)
 
         setupRecyclerView()
         observeData()
@@ -78,6 +83,7 @@ class GradesActivity : AppCompatActivity() {
                     }.collect { (rows, series) ->
                         adapter.submitList(rows)
                         binding.chartGpa.setData(series)
+                        binding.chartCpa.setData(series)
                         binding.tvEmpty.visibility =
                             if (rows.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE
                     }

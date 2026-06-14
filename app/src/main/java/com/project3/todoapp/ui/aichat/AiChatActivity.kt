@@ -140,29 +140,19 @@ class AiChatActivity : AppCompatActivity() {
     private fun setupEdgeToEdge() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowInsetsControllerCompat(window, binding.root).apply {
-            isAppearanceLightStatusBars = true
+            isAppearanceLightStatusBars = false  // white icons on red header
             isAppearanceLightNavigationBars = true
         }
-
-        val root = binding.root
-        val baseLeft = root.paddingLeft
-        val baseTop = root.paddingTop
-        val baseRight = root.paddingRight
-        val baseBottom = root.paddingBottom
-
-        ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
-            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { root, insets ->
+            val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+            val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            v.updatePadding(
-                left = baseLeft + bars.left,
-                top = baseTop + bars.top,
-                right = baseRight + bars.right,
-                bottom = baseBottom + maxOf(ime.bottom, bars.bottom),
-            )
-            if (ime.bottom > bars.bottom) scrollToBottom()
-            insets
+            binding.header.updatePadding(top = statusBars.top)
+            root.updatePadding(bottom = maxOf(navBars.bottom, ime.bottom))
+            if (ime.bottom > navBars.bottom) scrollToBottom()
+            WindowInsetsCompat.CONSUMED
         }
-        ViewCompat.requestApplyInsets(root)
+        ViewCompat.requestApplyInsets(binding.root)
     }
 
     private fun scrollToBottom() {
@@ -181,6 +171,10 @@ class AiChatActivity : AppCompatActivity() {
 
     private fun setupListeners() {
         binding.btnBack.setOnClickListener { finish() }
+        binding.btnNewChat.setOnClickListener {
+            AiChatActivity.startStandalone(this)
+            finish()
+        }
         binding.btnHistory.setOnClickListener {
             startActivity(Intent(this, ChatHistoryActivity::class.java))
         }

@@ -1,5 +1,6 @@
 package com.project3.todoapp.ui.tasks
 
+import com.project3.todoapp.ui.common.applyWindowInsets
 import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
@@ -41,6 +42,7 @@ class TasksActivity : AppCompatActivity() {
         container.permissionManager.checkAndRequestPermissions(this)
         binding = ActivityTasksBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyWindowInsets(binding.root, binding.appBar, binding.bottomBar)
 
         setupAdapters()
         setupListeners()

@@ -1,27 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  item_grade.xml — 1 học phần trong danh sách điểm.
-  Bố cục:  [Mã HP + Tên HP + Tên HP(E)]  ...  [TC]  [Điểm]  [nút xoá]
-  Tap cả dòng → sửa (GradeAdapter.onClick); nút thùng rác → xoá (onDelete).
-  IDs: tvCourseCode, tvCourseName, tvCourseNameEn, tvCredits, tvGrade, btnDeleteGrade
-       (khớp với GradeAdapter.CourseVH).
--->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="12dp"
-    android:layout_marginVertical="3dp"
+    android:layout_marginHorizontal="0dp"
+    android:layout_marginVertical="2dp"
     android:background="@android:color/white"
-    android:backgroundTint="@android:color/white"
     android:clickable="true"
-    android:focusable="true"
     android:elevation="1dp"
+    android:focusable="true"
     android:gravity="center_vertical"
     android:orientation="horizontal"
     android:paddingHorizontal="14dp"
     android:paddingVertical="12dp">
 
-    <!-- Khối thông tin học phần -->
+    <!-- Left accent -->
+    <View
+        android:layout_width="3dp"
+        android:layout_height="match_parent"
+        android:layout_marginEnd="12dp"
+        android:background="@color/hust_red" />
+
+    <!-- Course info -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -34,8 +33,8 @@
             android:layout_height="wrap_content"
             android:fontFamily="sans-serif-medium"
             android:text="IT4785"
-            android:textColor="#333333"
-            android:textSize="14sp" />
+            android:textColor="@color/hust_red"
+            android:textSize="13sp" />
 
         <TextView
             android:id="@+id/tvCourseName"
@@ -43,7 +42,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
             android:text="Phát triển ứng dụng cho thiết bị di động"
-            android:textColor="#444444"
+            android:textColor="@color/text_primary"
             android:textSize="13sp" />
 
         <TextView
@@ -51,34 +50,34 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Mobile Programming"
-            android:textColor="#999999"
-            android:textSize="12sp"
+            android:textColor="@color/text_hint"
+            android:textSize="11sp"
             android:textStyle="italic" />
     </LinearLayout>
 
-    <!-- Số tín chỉ -->
+    <!-- Credits -->
     <TextView
         android:id="@+id/tvCredits"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="12dp"
+        android:layout_marginEnd="10dp"
         android:text="2 TC"
-        android:textColor="#666666"
+        android:textColor="@color/text_secondary"
         android:textSize="12sp" />
 
-    <!-- Điểm chữ -->
+    <!-- Grade letter -->
     <TextView
         android:id="@+id/tvGrade"
-        android:layout_width="40dp"
+        android:layout_width="36dp"
         android:layout_height="wrap_content"
-        android:gravity="center"
         android:fontFamily="sans-serif-medium"
+        android:gravity="center"
         android:text="B"
-        android:textColor="#2E7D32"
+        android:textColor="@color/hust_red"
         android:textSize="18sp"
         android:textStyle="bold" />
 
-    <!-- Nút xoá -->
+    <!-- Delete button -->
     <ImageButton
         android:id="@+id/btnDeleteGrade"
         android:layout_width="40dp"
@@ -86,5 +85,7 @@
         android:background="?android:attr/selectableItemBackgroundBorderless"
         android:contentDescription="Xoá học phần"
         android:padding="8dp"
-        android:src="@android:drawable/ic_menu_delete" />
+        android:src="@android:drawable/ic_menu_delete"
+        app:tint="@color/text_hint"
+        xmlns:app="http://schemas.android.com/apk/res-auto" />
 </LinearLayout>
