@@ -71,13 +71,6 @@
             android:src="@android:drawable/ic_menu_recent_history"
             app:tint="#FFFFFF" />
 
-        <ProgressBar
-            android:id="@+id/progressThinking"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:layout_marginEnd="8dp"
-            android:indeterminateTint="#FFFFFF"
-            android:visibility="gone" />
     </LinearLayout>
 
     <!-- ══ QUICK PROMPT CHIPS ══ -->

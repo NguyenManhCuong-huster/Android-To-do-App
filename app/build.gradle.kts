@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.project3.todoapp"
+    namespace = "com.project.hustassistant"
     compileSdk = 36
 
     defaultConfig {

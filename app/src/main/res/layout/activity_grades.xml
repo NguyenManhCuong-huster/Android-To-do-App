@@ -175,7 +175,7 @@
                 android:textSize="11sp" />
         </LinearLayout>
 
-        <com.project3.todoapp.ui.grade.GpaChartView
+        <com.project.hustassistant.ui.grade.GpaChartView
             android:id="@+id/chartGpa"
             android:layout_width="match_parent"
             android:layout_height="130dp"
@@ -215,7 +215,7 @@
                 android:textSize="11sp" />
         </LinearLayout>
 
-        <com.project3.todoapp.ui.grade.GpaChartView
+        <com.project.hustassistant.ui.grade.GpaChartView
             android:id="@+id/chartCpa"
             android:layout_width="match_parent"
             android:layout_height="130dp"

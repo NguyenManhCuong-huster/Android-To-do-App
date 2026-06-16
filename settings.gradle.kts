@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Todo App"
+rootProject.name = "Hust Assistant"
 include(":app")

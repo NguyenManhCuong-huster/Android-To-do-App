@@ -1,14 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-  AndroidManifest.xml — TodoApp
-
-  Cấu hình đầy đủ cho toàn bộ project:
-  - Permissions: network + notifications + alarms
-  - Application class TodoApplication
-  - Toàn bộ 12 Activity
-  - TaskAlarmReceiver (broadcast cho reminder)
-  - FileProvider (MỚI 2026-05-23 — share file đính kèm sang app khác)
-  - <queries> (MỚI 2026-05-23 — Android 11+ package visibility cho ACTION_VIEW)
--->
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
