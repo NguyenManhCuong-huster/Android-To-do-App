@@ -29,7 +29,8 @@ data class NetworkEmail(
     val deepLinkIntent: String?,
     val receivedAt: String?,
     val isDeleted: Boolean,
-    val attachments: List<NetworkAttachment> = emptyList(),    // ← MỚI
+    val isRead: Boolean = false,
+    val attachments: List<NetworkAttachment> = emptyList(),
 )
 
 data class EmailPage(
@@ -50,6 +51,7 @@ interface EmailNetworkDataSource {
     suspend fun getEmail(id: String): NetworkEmail?
     suspend fun fetchThread(emailId: String): NetworkThread?
     suspend fun syncFromGmail(accountId: String? = null): EmailSyncSummary?
+    suspend fun markAsRead(emailId: String)
 }
 
 class EmailRemoteDataSource(
@@ -96,6 +98,10 @@ class EmailRemoteDataSource(
     override suspend fun syncFromGmail(accountId: String?): EmailSyncSummary? =
         emailApi.sync(EmailSyncBody(account_id = accountId)).data
 
+    override suspend fun markAsRead(emailId: String) {
+        emailApi.markAsRead(emailId)
+    }
+
     private fun EmailDto.toNetwork() = NetworkEmail(
         id = id,
         accountId = account_id,
@@ -111,6 +117,7 @@ class EmailRemoteDataSource(
         deepLinkIntent = deep_link_intent,
         receivedAt = received_at,
         isDeleted = is_deleted ?: false,
+        isRead = is_read ?: false,
         attachments = attachments?.toNetwork().orEmpty(),
     )
 

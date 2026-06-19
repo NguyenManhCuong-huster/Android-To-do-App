@@ -39,7 +39,7 @@ class AuthManager(
             .requestIdToken(serverClientId)
             .requestServerAuthCode(serverClientId)
             .requestScopes(
-                Scope("https://www.googleapis.com/auth/gmail.readonly")
+                Scope("https://www.googleapis.com/auth/gmail.modify")
             )
             .build()
         GoogleSignIn.getClient(context, gso)

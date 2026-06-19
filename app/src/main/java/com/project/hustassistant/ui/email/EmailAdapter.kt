@@ -1,5 +1,6 @@
 package com.project.hustassistant.ui.email
 
+import android.graphics.Typeface
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -52,6 +53,10 @@ class EmailAdapter(
             } else {
                 b.tvAccount.visibility = View.GONE
             }
+
+            val typeface = if (email.isRead) Typeface.NORMAL else Typeface.BOLD
+            b.tvSender.setTypeface(null, typeface)
+            b.tvSubject.setTypeface(null, typeface)
 
             b.root.setOnClickListener { onClick(email) }
         }

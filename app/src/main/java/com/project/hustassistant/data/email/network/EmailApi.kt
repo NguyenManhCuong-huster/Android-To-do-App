@@ -6,6 +6,7 @@ import com.project.hustassistant.network.PagedResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -35,9 +36,10 @@ data class EmailDto(
     val deep_link_intent: String?,
     val received_at: String?,
     val is_deleted: Boolean?,
+    val is_read: Boolean?,
     val mod_time: String?,
     val account_email: String?,
-    val attachments: List<AttachmentDto>? = null,    // ← MỚI
+    val attachments: List<AttachmentDto>? = null,
 )
 
 data class ThreadDto(
@@ -88,6 +90,9 @@ interface EmailApi {
 
     @GET("api/emails/{id}/attachments")
     suspend fun getAttachments(@Path("id") id: String): ApiResponse<List<AttachmentDto>>
+
+    @PATCH("api/emails/{id}/read")
+    suspend fun markAsRead(@Path("id") id: String): ApiResponse<Unit>
 
     @DELETE("api/emails/{id}")
     suspend fun delete(@Path("id") id: String): ApiResponse<Unit>

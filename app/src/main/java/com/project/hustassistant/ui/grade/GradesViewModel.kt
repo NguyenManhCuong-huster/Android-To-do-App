@@ -96,15 +96,97 @@ class GradesViewModel(
         }
     }
 
-    /** Kiểm tra trùng mã HP trong cùng học kỳ (chặn dup khi thêm offline). */
-    fun isDuplicate(semester: String, courseCode: String, excludeId: String?): Boolean =
-        grades.value.any {
+    /** Tìm TẤT CẢ grades trùng mã học phần (bất kể kỳ), trả list rỗng nếu không có. */
+    fun findAllDuplicates(courseCode: String, excludeId: String?): List<Grade> =
+        grades.value.filter {
             it.id != excludeId &&
-                it.semester.equals(semester.trim(), ignoreCase = true) &&
                 it.courseCode.equals(courseCode.trim(), ignoreCase = true)
         }
 
     fun clearToast() { _toast.value = null }
+
+    // ─── Cảnh báo học tập ────────────────────────────────────
+    data class AcademicWarning(val level: Level, val message: String) {
+        enum class Level { WARNING, DANGER }
+    }
+
+    val warnings: StateFlow<List<AcademicWarning>> = repository.getGradesStream()
+        .map { grades -> computeWarnings(grades, GpaCalculator.computeSeries(grades)) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    private fun computeWarnings(
+        grades: List<Grade>,
+        series: List<GpaCalculator.SemesterPoint>,
+    ): List<AcademicWarning> {
+        if (grades.isEmpty()) return emptyList()
+        val result = mutableListOf<AcademicWarning>()
+        val deduped = GpaCalculator.deduplicateByBestGrade(grades)
+
+        // ── Mức cảnh báo học tập chính thức (Quy chế HUST Điều 16) ──────
+        val status = GpaCalculator.computeWarningStatus(grades)
+
+        if (status.level > 0) {
+            val msg = when (status.level) {
+                1    -> "Cảnh báo học tập mức 1"
+                2    -> "Cảnh báo học tập mức 2 — bị hạn chế đăng ký (tối đa 14 TC/kỳ chính)"
+                else -> "Cảnh báo học tập mức 3 — nguy cơ buộc thôi học"
+            }
+            result += AcademicWarning(
+                if (status.level >= 2) AcademicWarning.Level.DANGER else AcademicWarning.Level.WARNING,
+                msg,
+            )
+        }
+
+        // Buộc thôi học: mức 3 hai kỳ chính liên tiếp
+        if (status.consecutiveLevel3 >= 2) {
+            result += AcademicWarning(
+                AcademicWarning.Level.DANGER,
+                "Cảnh báo mức 3 lần ${status.consecutiveLevel3} liên tiếp — có thể bị buộc thôi học",
+            )
+        }
+
+        // TC nợ đọng
+        if (status.overdueCredits > 0) {
+            result += AcademicWarning(
+                if (status.overdueCredits > 24) AcademicWarning.Level.DANGER else AcademicWarning.Level.WARNING,
+                "TC nợ đọng từ đầu khóa: ${status.overdueCredits} TC" +
+                    if (status.overdueCredits > 24) " (vượt ngưỡng 24 TC)" else "",
+            )
+        }
+
+        // ── Môn F cần học lại ─────────────────────────────────────────────
+        val failed = deduped.filter { it.letterGrade.trim().uppercase() == "F" }
+        if (failed.isNotEmpty()) {
+            result += AcademicWarning(
+                AcademicWarning.Level.WARNING,
+                "${failed.size} môn cần học lại: ${failed.joinToString { it.courseCode }}",
+            )
+        }
+
+        // ── GPA kỳ gần nhất ───────────────────────────────────────────────
+        val last = series.lastOrNull()
+        val lastGpa = last?.gpa
+        if (lastGpa != null && lastGpa < 2.0) {
+            result += AcademicWarning(
+                if (lastGpa < 1.0) AcademicWarning.Level.DANGER else AcademicWarning.Level.WARNING,
+                "GPA kỳ ${last!!.semester}: ${GpaCalculator.fmt(lastGpa)} — thấp hơn ngưỡng 2.0",
+            )
+        }
+
+        // ── CPA tổng (tham khảo thêm) ─────────────────────────────────────
+        val cpa = GpaCalculator.overallCpa(grades)
+        if (cpa != null && cpa < 2.5) {
+            result += AcademicWarning(
+                if (cpa < 2.0) AcademicWarning.Level.DANGER else AcademicWarning.Level.WARNING,
+                "CPA ${GpaCalculator.fmt(cpa)}" + when {
+                    cpa < 2.0 -> " — dưới ngưỡng an toàn"
+                    else      -> " — tiếp cận ngưỡng cảnh báo"
+                },
+            )
+        }
+
+        return result
+    }
 
     companion object {
         fun provideFactory(repository: GradeRepository): ViewModelProvider.Factory =

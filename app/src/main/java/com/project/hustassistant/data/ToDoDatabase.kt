@@ -29,9 +29,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
- * Bump version 15 → 16: thêm LocalGrade entity (kết quả học tập — điểm từng học phần).
- *
- * MIGRATION_15_16 tạo bảng `grade` (không wipe dữ liệu user).
+ * Bump version 16 → 17: thêm cột isRead vào bảng email.
  */
 @Database(
     entities = [
@@ -45,9 +43,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         LocalNewsRecommendation::class,
         LocalChatSession::class,
         LocalChatMessage::class,
-        LocalGrade::class,                         // ← MỚI 2026-06 (kết quả học tập)
+        LocalGrade::class,
     ],
-    version = 16,                                  // ← BUMP 15 → 16 (grade)
+    version = 17,
     exportSchema = false,
 )
 abstract class ToDoDatabase : RoomDatabase() {
@@ -107,6 +105,12 @@ abstract class ToDoDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_16_17 = object : Migration(16, 17) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `email` ADD COLUMN `isRead` INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         fun getDatabase(context: Context): ToDoDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -114,7 +118,7 @@ abstract class ToDoDatabase : RoomDatabase() {
                     ToDoDatabase::class.java,
                     "task_database",
                 )
-                    .addMigrations(MIGRATION_14_15, MIGRATION_15_16)
+                    .addMigrations(MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

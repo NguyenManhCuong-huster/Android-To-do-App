@@ -49,6 +49,7 @@ fun NetworkEmail.toLocal(): LocalEmail = LocalEmail(
     deepLinkIntent = deepLinkIntent,
     receivedAt = parseIsoToMillis(receivedAt),
     modTime = System.currentTimeMillis(),
+    isRead = isRead,
 )
 
 // ─── LocalEmail → Email (UI) ────────────────────────────
@@ -64,6 +65,7 @@ fun LocalEmail.toExternal(): Email = Email(
     deepLinkIntent = deepLinkIntent,
     receivedAt = millisToIso(receivedAt),
     modTime = modTime,
+    isRead = isRead,
 )
 
 @JvmName("localEmailListToExternal")

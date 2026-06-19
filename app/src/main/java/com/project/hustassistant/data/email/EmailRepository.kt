@@ -125,6 +125,23 @@ class EmailRepository(
         }
     }
 
+    /**
+     * Đánh dấu email đã đọc: cập nhật Room ngay lập tức (optimistic),
+     * rồi gọi server để server đồng bộ lên Gmail.
+     */
+    suspend fun markAsRead(emailId: String) {
+        withContext(dispatcher) {
+            emailDao.markAsRead(emailId)
+            if (shouldSync()) {
+                try {
+                    networkDataSource.markAsRead(emailId)
+                } catch (e: Exception) {
+                    Log.w(TAG, "markAsRead network fail for $emailId: ${e.message}")
+                }
+            }
+        }
+    }
+
     suspend fun deleteAllLocal() {
         withContext(dispatcher) { emailDao.deleteAll() }
     }

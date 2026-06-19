@@ -16,6 +16,7 @@ data class Email(
     val deepLinkIntent: String?,
     val receivedAt: String?,
     val modTime: Long,
+    val isRead: Boolean = false,
 )
 
 /**

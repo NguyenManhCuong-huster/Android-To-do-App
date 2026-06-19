@@ -61,6 +61,10 @@ class EmailThreadViewModel(
                         messages  = messages,
                         attachmentsByMessageId = attMap,
                     )
+                    // Mark tất cả message trong thread là đã đọc
+                    messages.forEach { msg ->
+                        repository.markAsRead(msg.localEmailId)
+                    }
                 },
                 onFailure = { err ->
                     _state.value = _state.value.copy(

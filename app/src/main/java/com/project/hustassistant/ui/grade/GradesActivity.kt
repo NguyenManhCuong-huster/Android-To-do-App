@@ -1,14 +1,18 @@
 package com.project.hustassistant.ui.grade
 
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.widget.ArrayAdapter
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.Spinner
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import com.project.hustassistant.ui.common.applyWindowInsets
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -105,7 +109,30 @@ class GradesActivity : AppCompatActivity() {
                         }
                     }
                 }
+
+                launch {
+                    viewModel.warnings.collect { renderWarnings(it) }
+                }
             }
+        }
+    }
+
+    private fun renderWarnings(warnings: List<GradesViewModel.AcademicWarning>) {
+        binding.warningsCard.isVisible = warnings.isNotEmpty()
+        if (warnings.isEmpty()) return
+        binding.warningsContainer.removeAllViews()
+        val dp4 = (4 * resources.displayMetrics.density).toInt()
+        for (w in warnings) {
+            val hex = if (w.level == GradesViewModel.AcademicWarning.Level.DANGER) "#E31837" else "#E65100"
+            binding.warningsContainer.addView(TextView(this).apply {
+                text = "• ${w.message}"
+                textSize = 13f
+                setTextColor(Color.parseColor(hex))
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { topMargin = dp4 }
+            })
         }
     }
 
@@ -122,6 +149,70 @@ class GradesActivity : AppCompatActivity() {
             list.sortedBy { it.courseCode }.forEach { rows += GradeRow.Course(it) }
         }
         return rows
+    }
+
+    /**
+     * [editingGradeId] = null → đang tạo mới.
+     *   - Positive "Ghi đè đã chọn": upsert từng bản được tick, KHÔNG tạo thêm bản mới.
+     *   - Neutral  "Nhập mới"       : tạo bản mới, không đụng các bản cũ.
+     *
+     * [editingGradeId] != null → đang sửa bản có id đó.
+     *   - Positive "Lưu": luôn upsert bản đang sửa + upsert thêm bất kỳ bản nào được tick.
+     *   - Không có nút "Nhập mới" (không có nghĩa khi đang edit).
+     */
+    private fun showDuplicateDialog(
+        duplicates: List<Grade>,
+        semester: String,
+        code: String,
+        name: String,
+        nameEn: String,
+        credits: Int,
+        letter: String,
+        editingGradeId: String?,
+    ) {
+        val labels = duplicates.map { g ->
+            val letterLabel = g.letterGrade.ifBlank { "chưa có điểm" }
+            "Kỳ ${g.semester} | ${g.courseName} | $letterLabel | ${g.credits}TC"
+        }.toTypedArray()
+        val checked = BooleanArray(duplicates.size)
+
+        val isEditing = editingGradeId != null
+        val title = if (isEditing)
+            "$code đã có ${duplicates.size} bản khác\nChọn bản muốn ghi đè thêm (tuỳ chọn):"
+        else
+            "$code đã có ${duplicates.size} bản\nChọn bản muốn ghi đè:"
+
+        val builder = AlertDialog.Builder(this)
+            .setTitle(title)
+            .setMultiChoiceItems(labels, checked) { _, which, isChecked -> checked[which] = isChecked }
+            .setPositiveButton(if (isEditing) "Lưu" else "Ghi đè đã chọn", null)
+            .setNegativeButton("Huỷ", null)
+
+        if (!isEditing) {
+            builder.setNeutralButton("Nhập mới") { _, _ ->
+                viewModel.createGrade(semester, code, name, nameEn, credits, letter)
+            }
+        }
+
+        val d = builder.create()
+        d.show()
+
+        d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            val selected = checked.indices.filter { checked[it] }
+            if (!isEditing && selected.isEmpty()) {
+                Toast.makeText(this, "Chưa chọn bản nào. Dùng \"Nhập mới\" để tạo bản mới.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            // Upsert bản đang sửa (nếu là edit)
+            if (editingGradeId != null) {
+                viewModel.updateGrade(editingGradeId, semester, code, name, nameEn, credits, letter)
+            }
+            // Upsert từng bản được chọn
+            selected.forEach { i ->
+                viewModel.updateGrade(duplicates[i].id, semester, code, name, nameEn, credits, letter)
+            }
+            d.dismiss()
+        }
     }
 
     private fun confirmDelete(grade: Grade) {
@@ -211,10 +302,14 @@ class GradesActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // Chặn trùng mã HP trong cùng học kỳ.
-            if (viewModel.isDuplicate(semester, code, grade?.id)) {
-                etCode.error = "Học phần $code đã có trong kỳ $semester"
-                etCode.requestFocus()
+            // Kiểm tra trùng mã HP (bất kể kỳ, bất kể create/edit).
+            val duplicates = viewModel.findAllDuplicates(code, grade?.id)
+            if (duplicates.isNotEmpty()) {
+                dialog.dismiss()
+                showDuplicateDialog(
+                    duplicates, semester, code, name, nameEn, credits, letter,
+                    editingGradeId = grade?.id,
+                )
                 return@setOnClickListener
             }
 

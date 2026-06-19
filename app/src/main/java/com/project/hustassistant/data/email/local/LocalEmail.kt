@@ -37,4 +37,5 @@ data class LocalEmail(
     val deepLinkIntent: String?,
     val receivedAt: Long,        // epoch millis
     val modTime: Long,
+    val isRead: Boolean = false,
 )
