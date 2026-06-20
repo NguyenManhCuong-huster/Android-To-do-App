@@ -1,74 +1,133 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   item_ai_message.xml — bubble tin nhắn AI chat.
-  User bubble: đỏ HUST · Assistant bubble: trắng với border nhẹ.
+  User bubble: đỏ HUST + nút "Sửa" · Assistant bubble: trắng + nút "Copy".
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:paddingHorizontal="12dp"
     android:paddingVertical="4dp">
 
-    <!-- USER bubble: align right, HUST red -->
+    <!-- ══ USER side (bubble + nút Sửa), align right ══ -->
     <LinearLayout
-        android:id="@+id/bubbleUser"
+        android:id="@+id/userSide"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="end"
-        android:background="@color/hust_red"
-        android:maxWidth="280dp"
+        android:gravity="end"
         android:orientation="vertical"
-        android:paddingHorizontal="14dp"
-        android:paddingVertical="10dp"
         android:visibility="gone">
 
-        <TextView
-            android:id="@+id/tvUser"
+        <LinearLayout
+            android:id="@+id/bubbleUser"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:lineSpacingExtra="2dp"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp" />
+            android:background="@color/hust_red"
+            android:maxWidth="280dp"
+            android:orientation="vertical"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="10dp">
+
+            <TextView
+                android:id="@+id/tvUser"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:lineSpacingExtra="2dp"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:id="@+id/userAttachmentsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="vertical"
+                android:visibility="gone" />
+        </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/userAttachmentsContainer"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:orientation="vertical"
-            android:visibility="gone" />
+            android:layout_marginTop="2dp"
+            android:gravity="end"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btnCopyUser"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Sao chép"
+                android:padding="6dp"
+                android:src="@drawable/ic_content_copy"
+                app:tint="@color/text_secondary" />
+
+            <ImageButton
+                android:id="@+id/btnEdit"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="4dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Sửa tin nhắn"
+                android:padding="6dp"
+                android:src="@drawable/ic_edit"
+                app:tint="@color/text_secondary" />
+        </LinearLayout>
     </LinearLayout>
 
-    <!-- ASSISTANT bubble: align left, white surface -->
+    <!-- ══ ASSISTANT side (bubble + nút Copy), align left ══
+         Bong bóng assistant rộng gần hết khung (trừ lề phải) + TextView
+         match_parent: BẮT BUỘC để Markwon render bảng đúng (wrap_content làm
+         width lúc đo ≠ lúc vẽ → các cột bảng đè chữ lên nhau). -->
     <LinearLayout
-        android:id="@+id/bubbleAssistant"
-        android:layout_width="wrap_content"
+        android:id="@+id/assistantSide"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="start"
-        android:background="@android:color/white"
-        android:elevation="1dp"
-        android:maxWidth="280dp"
+        android:gravity="start"
         android:orientation="vertical"
-        android:paddingHorizontal="14dp"
-        android:paddingVertical="10dp"
         android:visibility="gone">
 
-        <TextView
-            android:id="@+id/tvAssistant"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:lineSpacingExtra="2dp"
-            android:textColor="@color/text_primary"
-            android:textIsSelectable="true"
-            android:textSize="14sp" />
-
         <LinearLayout
-            android:id="@+id/assistantAttachmentsContainer"
+            android:id="@+id/bubbleAssistant"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginEnd="40dp"
+            android:background="@android:color/white"
+            android:elevation="1dp"
             android:orientation="vertical"
-            android:visibility="gone" />
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="10dp">
+
+            <TextView
+                android:id="@+id/tvAssistant"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:lineSpacingExtra="2dp"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:id="@+id/assistantAttachmentsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="vertical"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnCopy"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginTop="2dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Sao chép"
+            android:padding="6dp"
+            android:src="@drawable/ic_content_copy"
+            app:tint="@color/text_secondary" />
     </LinearLayout>
 
 </FrameLayout>

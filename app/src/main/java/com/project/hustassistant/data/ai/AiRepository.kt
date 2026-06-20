@@ -3,18 +3,27 @@ package com.project.hustassistant.data.ai
 import android.content.ContentResolver
 import android.net.Uri
 import android.webkit.MimeTypeMap
+import com.google.gson.Gson
 import com.project.hustassistant.data.ai.network.AiApi
 import com.project.hustassistant.data.ai.network.AiChatBody
 import com.project.hustassistant.data.ai.network.AiEmailChatBody
 import com.project.hustassistant.data.ai.network.AiMessageBody
 import com.project.hustassistant.data.ai.network.AiNewsChatBody
 import com.project.hustassistant.data.ai.network.AiReferenceDto
+import com.project.hustassistant.data.ai.network.AiStreamChunkDto
 import com.project.hustassistant.data.ai.network.AttachmentRefBody
+import com.project.hustassistant.network.ServerConfig
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.Locale
 
@@ -31,86 +40,87 @@ data class AiMessage(
 class AiRepository(
     private val aiApi: AiApi,
     private val contentResolver: ContentResolver,
+    private val streamingClient: OkHttpClient,
+    private val serverConfig: ServerConfig,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
+    private val gson = Gson()
 
     // ═══════════════════════════════════════════════════════════
-    //  Chat endpoints
+    //  Streaming chat (SSE) — kênh DUY NHẤT để chat với AI.
+    //
+    //  Retrofit + Gson không stream tốt nên dùng OkHttp trực tiếp đọc body theo
+    //  dòng. streamingClient đã có dynamicUrl + auth interceptor → chỉ cần build
+    //  URL từ ServerConfig. Trả về Flow<AiStreamEvent> (Delta / Tool / Done / Error).
     // ═══════════════════════════════════════════════════════════
 
-    /**
-     * Chat có context email: server tự fetch thread + attachments của thread.
-     * Per-message attachments (nếu có) vẫn được gửi cho server validate +
-     * merge vào "allowed IDs".
-     */
-    suspend fun emailChat(
-        emailId: String,
-        history: List<AiMessage>,
-    ): Result<AiChatResult> = runCatching {
-        withContext(dispatcher) {
-            val res = aiApi.emailChat(
-                AiEmailChatBody(
-                    email_id = emailId,
-                    messages = history.map { it.toBody() },
-                )
-            )
-            require(res.success) { res.message ?: "AI request failed" }
-            val data = res.data
-            AiChatResult(
-                reply = data?.reply.orEmpty(),
-                toolCalls = data?.tool_calls.orEmpty().map { AiToolCallMapper.map(it) },
-                references = data?.references.orEmpty().mapNotNull { it.toRefModel() },
-            )
-        }
-    }
+    fun chatStream(history: List<AiMessage>, systemInstruction: String? = null): Flow<AiStreamEvent> =
+        streamRequest(
+            "api/ai/chat/stream",
+            gson.toJson(AiChatBody(history.map { it.toBody() }, systemInstruction)),
+        )
 
-    /**
-     * Chat có context news: server tự fetch news + attachments của news.
-     * MỚI 2026-05-31.
-     */
-    suspend fun newsChat(
-        newsId: String,
-        history: List<AiMessage>,
-    ): Result<AiChatResult> = runCatching {
-        withContext(dispatcher) {
-            val res = aiApi.newsChat(
-                AiNewsChatBody(
-                    news_id = newsId,
-                    messages = history.map { it.toBody() },
-                )
-            )
-            require(res.success) { res.message ?: "AI request failed" }
-            val data = res.data
-            AiChatResult(
-                reply = data?.reply.orEmpty(),
-                toolCalls = data?.tool_calls.orEmpty().map { AiToolCallMapper.map(it) },
-                references = data?.references.orEmpty().mapNotNull { it.toRefModel() },
-            )
-        }
-    }
+    fun emailChatStream(emailId: String, history: List<AiMessage>): Flow<AiStreamEvent> =
+        streamRequest(
+            "api/ai/email-chat/stream",
+            gson.toJson(AiEmailChatBody(emailId, history.map { it.toBody() })),
+        )
 
-    /** Chat thuần — không có email/news context. */
-    suspend fun chat(
-        history: List<AiMessage>,
-        systemInstruction: String? = null,
-    ): Result<AiChatResult> = runCatching {
-        withContext(dispatcher) {
-            val res = aiApi.chat(
-                AiChatBody(
-                    messages = history.map { it.toBody() },
-                    system_instruction = systemInstruction,
-                )
-            )
-            require(res.success) { res.message ?: "AI request failed" }
-            val data = res.data
-            AiChatResult(
-                reply = data?.reply.orEmpty(),
-                toolCalls = data?.tool_calls.orEmpty().map { AiToolCallMapper.map(it) },
-                references = data?.references.orEmpty().mapNotNull { it.toRefModel() },
-            )
-        }
-    }
+    fun newsChatStream(newsId: String, history: List<AiMessage>): Flow<AiStreamEvent> =
+        streamRequest(
+            "api/ai/news-chat/stream",
+            gson.toJson(AiNewsChatBody(newsId, history.map { it.toBody() })),
+        )
 
+    private fun streamRequest(path: String, bodyJson: String): Flow<AiStreamEvent> = flow {
+        val url = serverConfig.getBaseUrl() + path
+        val request = Request.Builder()
+            .url(url)
+            .header("Accept", "text/event-stream")
+            .post(bodyJson.toRequestBody(JSON_MEDIA))
+            .build()
+
+        streamingClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                val msg = response.body?.string()?.takeIf { it.isNotBlank() } ?: "HTTP ${response.code}"
+                emit(AiStreamEvent.Error(msg))
+                return@flow
+            }
+            val source = response.body?.source()
+            if (source == null) {
+                emit(AiStreamEvent.Error("Server trả response rỗng."))
+                return@flow
+            }
+
+            while (!source.exhausted()) {
+                val line = source.readUtf8Line() ?: break
+                if (!line.startsWith("data:")) continue
+                val data = line.substring(5).trim()
+                if (data.isEmpty() || data == "[DONE]") continue
+
+                val chunk = runCatching { gson.fromJson(data, AiStreamChunkDto::class.java) }.getOrNull()
+                    ?: continue
+
+                when (chunk.type) {
+                    "delta" -> chunk.text?.let { emit(AiStreamEvent.Delta(it)) }
+                    "tool"  -> chunk.tool_call?.let { emit(AiStreamEvent.Tool(AiToolCallMapper.map(it))) }
+                    "done"  -> {
+                        emit(
+                            AiStreamEvent.Done(
+                                reply = chunk.reply.orEmpty(),
+                                references = chunk.references.orEmpty().mapNotNull { it.toRefModel() },
+                            ),
+                        )
+                        return@flow
+                    }
+                    "error" -> {
+                        emit(AiStreamEvent.Error(chunk.message ?: "AI lỗi"))
+                        return@flow
+                    }
+                }
+            }
+        }
+    }.flowOn(dispatcher)
 
     /**
      * Upload 1 file từ content Uri lên server. Trả về AttachmentRef để
@@ -189,5 +199,9 @@ class AiRepository(
         val t = type?.lowercase()?.takeIf { it == "email" || it == "news" } ?: return null
         val i = id?.takeIf { it.isNotBlank() } ?: return null
         return AiReference(type = t, id = i, label = label.orEmpty())
+    }
+
+    private companion object {
+        private val JSON_MEDIA = "application/json; charset=utf-8".toMediaType()
     }
 }

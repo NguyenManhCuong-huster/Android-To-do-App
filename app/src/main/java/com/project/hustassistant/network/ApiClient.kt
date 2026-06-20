@@ -27,18 +27,32 @@ class ApiClient(
     // DynamicUrlInterceptor sẽ ghi đè nó → giá trị này là placeholder.
     private val _placeholder = "http://placeholder.local/"
 
+    private val okHttpClient: OkHttpClient by lazy { buildHttp() }
     private val retrofit: Retrofit by lazy { buildRetrofit() }
+
+    /**
+     * Client RIÊNG cho call streaming (SSE) như AI chat.
+     *
+     * KHÁC [okHttpClient] ở 2 điểm sống còn cho stream:
+     *   1. KHÔNG log BODY — HttpLoggingInterceptor mức BODY đọc trọn response để
+     *      log trước khi trả về, làm MẤT tính streaming (đó là lý do trước đây
+     *      "chưa thấy stream"). Ở đây chỉ log HEADERS.
+     *   2. readTimeout = 0 (vô hạn) — giữa các token / lúc chạy tool có thể im
+     *      lặng vài chục giây, không được timeout.
+     * Vẫn dùng chung dynamicUrl + auth interceptor nên có host động + JWT.
+     */
+    val streamingHttpClient: OkHttpClient by lazy { buildStreamingHttp() }
 
     fun <T> create(service: Class<T>): T = retrofit.create(service)
 
     // ─── Build ───────────────────────────────────────────
-    private fun buildRetrofit(): Retrofit {
+    private fun buildHttp(): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
             level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
             else HttpLoggingInterceptor.Level.NONE
         }
 
-        val http = OkHttpClient.Builder()
+        return OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(120, TimeUnit.SECONDS)
             .writeTimeout(120, TimeUnit.SECONDS)
@@ -46,10 +60,28 @@ class ApiClient(
             .addInterceptor(authInterceptor())
             .addInterceptor(logging)
             .build()
+    }
 
+    private fun buildStreamingHttp(): OkHttpClient {
+        val logging = HttpLoggingInterceptor().apply {
+            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.HEADERS
+            else HttpLoggingInterceptor.Level.NONE
+        }
+
+        return OkHttpClient.Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(0, TimeUnit.SECONDS)      // stream: không timeout giữa các chunk
+            .writeTimeout(120, TimeUnit.SECONDS)
+            .addInterceptor(dynamicUrlInterceptor())
+            .addInterceptor(authInterceptor())
+            .addInterceptor(logging)
+            .build()
+    }
+
+    private fun buildRetrofit(): Retrofit {
         return Retrofit.Builder()
             .baseUrl(_placeholder)
-            .client(http)
+            .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }

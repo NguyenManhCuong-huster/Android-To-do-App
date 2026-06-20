@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.project.hustassistant.data.ai.AiChatItem
 import com.project.hustassistant.data.ai.AiMessage
 import com.project.hustassistant.data.ai.AiRepository
+import com.project.hustassistant.data.ai.AiStreamEvent
 import com.project.hustassistant.data.ai.AttachmentRef
 import com.project.hustassistant.data.ai.ChatHistoryRepository
 import com.project.hustassistant.data.attachment.Attachment
@@ -52,6 +53,12 @@ class AiChatViewModel(
         val pendingAttachments: List<AttachmentRef> = emptyList(),
         /** Số file đang upload (để hiện progress + disable send). */
         val uploadingCount: Int = 0,
+
+        /**
+         * Nội dung cần ĐỔ vào ô soạn (one-shot) — dùng khi user bấm Sửa 1 tin.
+         * Activity quan sát, set vào EditText rồi gọi [consumeInputDraft].
+         */
+        val inputDraft: String? = null,
     )
 
     private val _state = MutableStateFlow(UiState())
@@ -65,6 +72,13 @@ class AiChatViewModel(
 
     /** Khoá tạo phiên lazy để tránh tạo trùng khi 2 persist chạy song song. */
     private val sessionMutex = Mutex()
+
+    /**
+     * Khi user "Sửa" 1 tin → bắt đầu nhánh chat mới: các tin TRƯỚC tin được sửa
+     * được giữ tạm ở đây và chỉ ghi vào phiên mới khi user thực sự bấm gửi (tránh
+     * tạo phiên rác nếu user đổi ý). null = không ở trạng thái nhánh.
+     */
+    private var branchPrefix: List<AiMessage>? = null
 
     init {
         bootstrap()
@@ -159,13 +173,54 @@ class AiChatViewModel(
             isThinking = true,
             errorMessage = null,
             pendingAttachments = emptyList(),
+            inputDraft = null,
         )
+        // Nếu đang ở nhánh "Sửa": ghi prefix vào phiên mới trước, rồi tới tin này.
+        branchPrefix?.let { prefix ->
+            branchPrefix = null
+            prefix.forEach { persist(it) }
+        }
         persist(msg)
         callAi(newItems.toMessageHistory())
     }
 
     fun clearError() {
         _state.value = _state.value.copy(errorMessage = null)
+    }
+
+    /**
+     * "Sửa" 1 tin user: tách thành nhánh chat MỚI gồm các tin TRƯỚC tin đó, đẩy
+     * nội dung tin đó (kèm file) trở lại ô soạn để user chỉnh rồi gửi lại. Phiên
+     * cũ giữ nguyên trong Lịch sử; phiên mới tạo lazy khi user bấm gửi.
+     */
+    fun editFrom(item: AiChatItem.Message) {
+        val current = _state.value
+        if (current.isThinking || item.role != AiMessage.Role.USER) return
+        val idx = current.items.indexOfFirst { it === item }
+        if (idx < 0) return
+
+        val prefix = current.items.subList(0, idx)
+            .filterNot { it is AiChatItem.Thinking || it is AiChatItem.Streaming }
+        val prefixMessages = prefix.filterIsInstance<AiChatItem.Message>().map { it.message }
+
+        sessionId = null
+        seq = 0
+        branchPrefix = prefixMessages
+
+        _state.value = current.copy(
+            items = prefix,
+            isThinking = false,
+            errorMessage = null,
+            pendingAttachments = item.attachments,
+            inputDraft = item.content,
+        )
+    }
+
+    /** Activity gọi sau khi đã đổ [UiState.inputDraft] vào ô soạn. */
+    fun consumeInputDraft() {
+        if (_state.value.inputDraft != null) {
+            _state.value = _state.value.copy(inputDraft = null)
+        }
     }
 
     /**
@@ -293,63 +348,110 @@ class AiChatViewModel(
     // AI call (route theo context)
     // ─────────────────────────────────────────────────────
 
+    /**
+     * Gọi AI ở chế độ STREAMING. Bong bóng assistant cập nhật dần theo từng
+     * delta; card tool-call hiện ngay khi 1 tool chạy xong; khi [AiStreamEvent.Done]
+     * thì chốt nội dung đầy đủ + reference + lưu lịch sử.
+     *
+     * [baseItems] = snapshot các item TRƯỚC phản hồi của lượt này (gồm tin user
+     * vừa gửi, đã bỏ Thinking). Mỗi lần render lại = baseItems + tool cards +
+     * (bong bóng đang stream | Thinking nếu chưa có chữ nào).
+     */
     private fun callAi(history: List<AiMessage>) {
+        val baseItems: List<AiChatItem> = _state.value.items.filterNot { it is AiChatItem.Thinking }
+        val collectedTools = mutableListOf<AiChatItem.ToolCall>()
+        val buffer = StringBuilder()
+        var streaming = false
+
+        fun render() {
+            val tail: List<AiChatItem> =
+                if (streaming) listOf(AiChatItem.Streaming(buffer.toString()))
+                else listOf(AiChatItem.Thinking)
+            _state.value = _state.value.copy(items = baseItems + collectedTools + tail)
+        }
+
         viewModelScope.launch {
-            val result = when (context) {
-                is ChatContext.Email -> aiRepository.emailChat(context.emailId, history)
-                is ChatContext.News -> aiRepository.newsChat(context.newsId, history)
-                is ChatContext.Standalone -> aiRepository.chat(
-                    history = history,
-                    systemInstruction = STANDALONE_SYSTEM_INSTRUCTION,
-                )
+            val flow = when (context) {
+                is ChatContext.Email      -> aiRepository.emailChatStream(context.emailId, history)
+                is ChatContext.News       -> aiRepository.newsChatStream(context.newsId, history)
+                is ChatContext.Standalone -> aiRepository.chatStream(history, STANDALONE_SYSTEM_INSTRUCTION)
             }
 
-            result.fold(
-                onSuccess = { res ->
-                    val toolItems = res.toolCalls.map { AiToolCallPresenter.present(it) }
-                    val replyItem = AiChatItem.Message(
-                        AiMessage(
-                            role = AiMessage.Role.ASSISTANT,
-                            content = res.reply.ifBlank { "(không có nội dung)" },
-                            references = res.references,
-                        ),
-                    )
-                    persist(replyItem.message)
-                    val taskCreated = toolItems.any {
-                        (it.name == "create_task" || it.name == "create_weekly_tasks") && it.success
-                    }
-                    val gradeCreated = toolItems.any {
-                        (it.name == "create_grade" || it.name == "create_grades") && it.success
-                    }
-                    if (gradeCreated) {
-                        viewModelScope.launch {
-                            runCatching { gradeRepository.sync() }
+            runCatching {
+                flow.collect { ev ->
+                    when (ev) {
+                        is AiStreamEvent.Delta -> {
+                            buffer.append(ev.text)
+                            streaming = true
+                            render()
                         }
+
+                        is AiStreamEvent.Tool -> {
+                            collectedTools.add(AiToolCallPresenter.present(ev.toolCall))
+                            render()
+                        }
+
+                        is AiStreamEvent.Done  -> finishStream(baseItems, collectedTools, ev)
+
+                        is AiStreamEvent.Error -> failStream(baseItems, collectedTools, ev.message)
                     }
-                    // Ghim kiểu List<AiChatItem> để tránh Kotlin suy ra List<Any>
-                    // khi cộng List<AiChatItem> + List<AiChatItem.ToolCall> (kiểu con).
-                    val updatedItems: List<AiChatItem> = buildList {
-                        addAll(_state.value.items.filterNot { it is AiChatItem.Thinking })
-                        addAll(toolItems)
-                        add(replyItem)
-                    }
-                    _state.value = _state.value.copy(
-                        items = updatedItems,
-                        isThinking = false,
-                        taskCreatedSignal =
-                            if (taskCreated) _state.value.taskCreatedSignal + 1
-                            else _state.value.taskCreatedSignal,
-                    )
-                },
-                onFailure = { err ->
-                    _state.value = _state.value.copy(
-                        items = _state.value.items.filterNot { it is AiChatItem.Thinking },
-                        isThinking = false,
-                        errorMessage = err.message ?: "AI lỗi",
-                    )
-                },
-            )
+                }
+            }.onFailure { err ->
+                failStream(baseItems, collectedTools, err.message ?: "AI lỗi")
+            }
         }
+    }
+
+    private fun finishStream(
+        baseItems: List<AiChatItem>,
+        tools: List<AiChatItem.ToolCall>,
+        done: AiStreamEvent.Done,
+    ) {
+        val replyItem = AiChatItem.Message(
+            AiMessage(
+                role = AiMessage.Role.ASSISTANT,
+                content = done.reply.ifBlank { "(không có nội dung)" },
+                references = done.references,
+            ),
+        )
+        persist(replyItem.message)
+
+        val taskCreated = tools.any {
+            (it.name == "create_task" || it.name == "create_weekly_tasks") && it.success
+        }
+        val gradeCreated = tools.any {
+            (it.name == "create_grade" || it.name == "create_grades") && it.success
+        }
+        if (gradeCreated) {
+            viewModelScope.launch { runCatching { gradeRepository.sync() } }
+        }
+
+        val updatedItems: List<AiChatItem> = buildList {
+            addAll(baseItems)
+            addAll(tools)
+            add(replyItem)
+        }
+        _state.value = _state.value.copy(
+            items = updatedItems,
+            isThinking = false,
+            taskCreatedSignal =
+                if (taskCreated) _state.value.taskCreatedSignal + 1
+                else _state.value.taskCreatedSignal,
+        )
+    }
+
+    private fun failStream(
+        baseItems: List<AiChatItem>,
+        tools: List<AiChatItem.ToolCall>,
+        message: String,
+    ) {
+        // Bỏ bong bóng stream/Thinking, giữ lại các tool card đã chạy được.
+        val kept: List<AiChatItem> = baseItems + tools
+        _state.value = _state.value.copy(
+            items = kept,
+            isThinking = false,
+            errorMessage = message,
+        )
     }
 
     // ─────────────────────────────────────────────────────

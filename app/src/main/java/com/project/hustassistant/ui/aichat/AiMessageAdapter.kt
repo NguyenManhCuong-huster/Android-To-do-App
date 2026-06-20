@@ -5,6 +5,8 @@ import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Handler
 import android.os.Looper
+import android.text.SpannableString
+import android.text.Spanned
 import android.text.method.LinkMovementMethod
 import android.view.LayoutInflater
 import android.view.View
@@ -22,35 +24,36 @@ import com.project.hustassistant.data.ai.AiReference
 import com.project.hustassistant.data.ai.AttachmentRef
 import com.project.hustassistant.databinding.ItemAiMessageBinding
 import com.project.hustassistant.databinding.ItemAiToolCallBinding
+import io.noties.markwon.Markwon
 
 /**
- * AiMessageAdapter — render bubble tin nhắn AI/user + card tool call.
+ * AiMessageAdapter — render bubble tin nhắn AI/user + card tool call + bong bóng
+ * đang stream.
  *
  * View types:
- *   - VIEW_TYPE_MESSAGE   → item_ai_message.xml (bubble user/assistant)
+ *   - VIEW_TYPE_MESSAGE   → item_ai_message.xml (bubble user/assistant + copy/sửa)
  *   - VIEW_TYPE_TOOL_CALL → item_ai_tool_call.xml (card "AI đã làm gì")
+ *   - VIEW_TYPE_THINKING  → item_ai_thinking.xml (3 chấm nhảy)
+ *   - VIEW_TYPE_STREAMING → item_ai_streaming.xml (assistant đang gõ dần)
  *
- * THAY ĐỔI 2026-05-31:
- *  - Constructor nhận [onAttachmentTap] callback.
- *  - MessageVH render chip attachment trong bubble (cả user và assistant).
- *  - ToolCallVH dùng emoji 📎 cho tool `read_attachment` (success);
- *    còn lại giữ ✅/⚠️ như bản gốc.
- *
- * THAY ĐỔI 2026-06:
- *  - Constructor nhận thêm [onReferenceTap] callback.
- *  - Bubble assistant: token trích dẫn [[email:id]] / [[news:id]] trong reply
- *    được render thành chip bấm được (buildMessageText). Khi có reference,
- *    bật LinkMovementMethod + tắt textIsSelectable để span bấm được hoạt động.
+ * THAY ĐỔI 2026-06 (streaming + markdown):
+ *  - Reply assistant render MARKDOWN qua [Markwon].
+ *  - Bong bóng assistant có nút Copy; bong bóng user có nút Sửa.
+ *  - Thêm view type STREAMING cho text cập nhật dần theo từng delta.
  */
 class AiMessageAdapter(
+    private val markwon: Markwon,
     private val onAttachmentTap: (AttachmentRef) -> Unit,
     private val onReferenceTap: (AiReference) -> Unit,
+    private val onCopy: (String) -> Unit,
+    private val onEdit: (AiChatItem.Message) -> Unit,
 ) : ListAdapter<AiChatItem, RecyclerView.ViewHolder>(DiffCb()) {
 
     override fun getItemViewType(position: Int): Int = when (getItem(position)) {
         is AiChatItem.Message   -> VIEW_TYPE_MESSAGE
         is AiChatItem.ToolCall  -> VIEW_TYPE_TOOL_CALL
         is AiChatItem.Thinking  -> VIEW_TYPE_THINKING
+        is AiChatItem.Streaming -> VIEW_TYPE_STREAMING
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -58,20 +61,27 @@ class AiMessageAdapter(
         return when (viewType) {
             VIEW_TYPE_MESSAGE   -> MessageVH(
                 ItemAiMessageBinding.inflate(inflater, parent, false),
+                markwon,
                 onAttachmentTap,
                 onReferenceTap,
+                onCopy,
+                onEdit,
             )
             VIEW_TYPE_TOOL_CALL -> ToolCallVH(ItemAiToolCallBinding.inflate(inflater, parent, false))
             VIEW_TYPE_THINKING  -> ThinkingVH(inflater.inflate(R.layout.item_ai_thinking, parent, false))
+            VIEW_TYPE_STREAMING -> StreamingVH(
+                inflater.inflate(R.layout.item_ai_streaming, parent, false), markwon,
+            )
             else                -> error("Unknown viewType $viewType")
         }
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val item = getItem(position)) {
-            is AiChatItem.Message  -> (holder as MessageVH).bind(item)
-            is AiChatItem.ToolCall -> (holder as ToolCallVH).bind(item)
-            is AiChatItem.Thinking -> Unit
+            is AiChatItem.Message   -> (holder as MessageVH).bind(item)
+            is AiChatItem.ToolCall  -> (holder as ToolCallVH).bind(item)
+            is AiChatItem.Streaming -> (holder as StreamingVH).bind(item)
+            is AiChatItem.Thinking  -> Unit
         }
     }
 
@@ -84,44 +94,50 @@ class AiMessageAdapter(
     }
 
     // ─────────────────────────────────────────────────────────────
-    // Message bubble + attachment chips + reference chips
+    // Message bubble + attachment chips + reference chips + markdown
     // ─────────────────────────────────────────────────────────────
     class MessageVH(
         private val b: ItemAiMessageBinding,
+        private val markwon: Markwon,
         private val onAttachmentTap: (AttachmentRef) -> Unit,
         private val onReferenceTap: (AiReference) -> Unit,
+        private val onCopy: (String) -> Unit,
+        private val onEdit: (AiChatItem.Message) -> Unit,
     ) : RecyclerView.ViewHolder(b.root) {
 
         fun bind(item: AiChatItem.Message) {
             val isUser = item.role == AiMessage.Role.USER
-            b.bubbleUser.isVisible      = isUser
-            b.bubbleAssistant.isVisible = !isUser
+            b.userSide.isVisible      = isUser
+            b.assistantSide.isVisible = !isUser
 
             if (isUser) {
                 b.tvUser.text = item.content
                 bindAttachments(b.userAttachmentsContainer, item.attachments)
-                // Container assistant bên kia ẩn → không cần clear
+                b.btnEdit.setOnClickListener { onEdit(item) }
+                b.btnCopyUser.setOnClickListener { onCopy(item.content) }
             } else {
                 bindAssistantText(item)
                 bindAttachments(b.assistantAttachmentsContainer, item.attachments)
+                b.btnCopy.setOnClickListener { onCopy(item.content) }
             }
         }
 
         /**
-         * Render text bubble assistant. Nếu có reference → thay token bằng chip
-         * bấm được + bật LinkMovementMethod. Nếu không → giữ text chọn được như cũ.
+         * Render markdown reply. Nếu có reference → chèn chip bấm được lên trên
+         * spanned markdown.
+         *
+         * QUAN TRỌNG: phải dùng [Markwon.setParsedMarkdown] chứ KHÔNG gán
+         * `tv.text = ...`. setParsedMarkdown gọi afterSetText() — bước mà
+         * TablePlugin cần để layout bảng; thiếu nó thì bảng bị đè chữ.
          */
         private fun bindAssistantText(item: AiChatItem.Message) {
-            if (item.references.isEmpty()) {
-                b.tvAssistant.movementMethod = null
-                b.tvAssistant.setTextIsSelectable(true)
-                b.tvAssistant.text = item.content
-            } else {
-                // textIsSelectable + clickable span xung đột → tắt selectable khi có link.
-                b.tvAssistant.setTextIsSelectable(false)
-                b.tvAssistant.movementMethod = LinkMovementMethod.getInstance()
-                b.tvAssistant.text = buildMessageText(item.content, item.references, onReferenceTap)
-            }
+            val rendered: Spanned = markwon.toMarkdown(item.content)
+            val finalText: CharSequence =
+                if (item.references.isEmpty()) rendered
+                else applyReferences(rendered, item.references, onReferenceTap)
+            val spanned = finalText as? Spanned ?: SpannableString(finalText)
+            markwon.setParsedMarkdown(b.tvAssistant, spanned)
+            b.tvAssistant.movementMethod = LinkMovementMethod.getInstance()
         }
 
         private fun bindAttachments(container: LinearLayout, refs: List<AttachmentRef>) {
@@ -140,6 +156,25 @@ class AiMessageAdapter(
                 chip.setOnClickListener { onAttachmentTap(ref) }
                 container.addView(chip)
             }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Streaming bubble — markdown cập nhật dần, có con trỏ ▌
+    // ─────────────────────────────────────────────────────────────
+    class StreamingVH(
+        view: View,
+        private val markwon: Markwon,
+    ) : RecyclerView.ViewHolder(view) {
+        private val tv: TextView = view.findViewById(R.id.tvStreaming)
+
+        fun bind(item: AiChatItem.Streaming) {
+            // "▌" báo đang gõ; nếu chưa có chữ nào hiện mỗi con trỏ.
+            markwon.setMarkdown(tv, item.content + CURSOR)
+        }
+
+        companion object {
+            private const val CURSOR = " ▌"
         }
     }
 
@@ -257,7 +292,14 @@ class AiMessageAdapter(
     // DiffUtil
     // ─────────────────────────────────────────────────────────────
     class DiffCb : DiffUtil.ItemCallback<AiChatItem>() {
-        override fun areItemsTheSame(a: AiChatItem, b: AiChatItem)    = a === b
+        override fun areItemsTheSame(a: AiChatItem, b: AiChatItem) = when {
+            // Chỉ tồn tại 1 Thinking / 1 Streaming tại 1 thời điểm → coi là "cùng
+            // item" để cập nhật tại chỗ (mượt) thay vì remove+add (giật).
+            a is AiChatItem.Thinking  && b is AiChatItem.Thinking  -> true
+            a is AiChatItem.Streaming && b is AiChatItem.Streaming -> true
+            else -> a === b
+        }
+
         override fun areContentsTheSame(a: AiChatItem, b: AiChatItem) = a == b
     }
 
@@ -265,6 +307,7 @@ class AiMessageAdapter(
         private const val VIEW_TYPE_MESSAGE   = 1
         private const val VIEW_TYPE_TOOL_CALL = 2
         private const val VIEW_TYPE_THINKING  = 3
+        private const val VIEW_TYPE_STREAMING = 4
         private const val FALLBACK_TAG_COLOR  = 0xFF607D8B.toInt()  // blue-grey
     }
 }

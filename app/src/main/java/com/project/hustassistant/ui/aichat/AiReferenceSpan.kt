@@ -15,7 +15,7 @@ import com.project.hustassistant.data.ai.AiReference
  *   [[news:<uuid>]]   → tin tức / kế hoạch
  * và trả kèm references = [{ type, id, label }].
  *
- * buildMessageText() thay mỗi token bằng 1 đoạn text bấm được hiển thị
+ * applyReferences() thay mỗi token bằng 1 đoạn text bấm được hiển thị
  * "📧 <subject>" / "📰 <title>" (label lấy từ references). Tap → onReferenceTap(ref)
  * → AiChatActivity điều hướng tới EmailThreadActivity / NewsDetailActivity.
  *
@@ -29,12 +29,17 @@ private val REFERENCE_TOKEN =
 // Cùng tông xanh với chip attachment (item_ai_message_attachment_chip.xml).
 private const val LINK_COLOR = 0xFF0288D1.toInt()
 
-fun buildMessageText(
-    content: String,
+/**
+ * Áp reference lên [content] — vốn có thể là Spanned đã render markdown (Markwon).
+ * SpannableStringBuilder.append(CharSequence, start, end) giữ nguyên span của
+ * markdown trong các đoạn được copy, chỉ chèn thêm chip trích dẫn.
+ */
+fun applyReferences(
+    content: CharSequence,
     references: List<AiReference>,
     onReferenceTap: (AiReference) -> Unit,
 ): CharSequence {
-    // Không có reference → vẫn dọn token rác (nếu lọt) rồi trả plain text.
+    // Không có reference → vẫn dọn token rác (nếu lọt) rồi trả nguyên (giữ span).
     if (references.isEmpty()) {
         return if (content.contains("[[")) REFERENCE_TOKEN.replace(content, "").trimEnd()
         else content

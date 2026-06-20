@@ -157,6 +157,8 @@ class AppContainer(val context: Context) {
         AiRepository(
             aiApi           = aiApi,
             contentResolver = context.applicationContext.contentResolver,
+            streamingClient = apiClient.streamingHttpClient,
+            serverConfig    = serverConfig,
         )
     }
 

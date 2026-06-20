@@ -104,4 +104,9 @@ dependencies {
     // UI
     implementation(libs.flexbox)
     implementation(libs.androidx.swiperefreshlayout)
+
+    // Markdown rendering cho AI chat (core + bảng GFM + gạch ngang)
+    implementation(libs.markwon.core)
+    implementation(libs.markwon.ext.tables)
+    implementation(libs.markwon.ext.strikethrough)
 }

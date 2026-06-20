@@ -2,7 +2,6 @@ package com.project.hustassistant.data.ai.network
 
 import com.project.hustassistant.network.ApiResponse
 import okhttp3.MultipartBody
-import retrofit2.http.Body
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
@@ -57,23 +56,23 @@ data class AiReferenceDto(
     val label: String?,
 )
 
-/** Mini DTO cho effective_attachments trong response. */
-data class EffectiveAttachmentDto(
-    val id: String,
-    val file_name: String,
-    val mime_type: String?,
-    val size_bytes: Long?,
-    val is_downloaded: Boolean?,
-    val is_inline: Boolean?,
-)
-
-data class AiChatReply(
-    val reply: String,
-    val thread_message_count: Int? = null,
-    val usage: Map<String, Any?>? = null,
+/**
+ * 1 sự kiện SSE từ các endpoint /chat/stream, /email-chat/stream, /news-chat/stream.
+ *
+ * Wire: mỗi dòng `data: <json>` với field `type`:
+ *   - "delta" → text         : 1 đoạn text mới của câu trả lời.
+ *   - "tool"  → tool_call     : 1 tool vừa chạy xong.
+ *   - "done"  → reply, references, usage, tool_calls : kết thúc (reply là text đầy đủ).
+ *   - "error" → message       : lỗi.
+ */
+data class AiStreamChunkDto(
+    val type: String,
+    val text: String? = null,
+    val tool_call: AiToolCallDto? = null,
+    val reply: String? = null,
+    val references: List<AiReferenceDto>? = null,
     val tool_calls: List<AiToolCallDto>? = null,
-    val effective_attachments: List<EffectiveAttachmentDto>? = null,           // ← MỚI
-    val references: List<AiReferenceDto>? = null,                              // ← MỚI 2026-06
+    val message: String? = null,
 )
 
 /** Response của /api/ai/upload-attachment. */
@@ -86,24 +85,14 @@ data class AiUploadAttachmentDto(
 
 interface AiApi {
 
-    /** Chat thuần — không có context kèm. */
-    @POST("api/ai/chat")
-    suspend fun chat(@Body body: AiChatBody): ApiResponse<AiChatReply>
-
-    /** Chat có context là 1 thread email (server tự load thread). */
-    @POST("api/ai/email-chat")
-    suspend fun emailChat(@Body body: AiEmailChatBody): ApiResponse<AiChatReply>
-
-    /** Chat có context là 1 news/plan (server tự load + đính kèm file của news). */
-    @POST("api/ai/news-chat")                                                  // ← MỚI 2026-05-31
-    suspend fun newsChat(@Body body: AiNewsChatBody): ApiResponse<AiChatReply>
-
     /**
      * Upload 1 file vào AI Chat (owner_type='AI_CHAT' ở server).
      * Multipart field name = "file".
+     *
+     * (Chat thực hiện qua streaming SSE trong AiRepository, không qua Retrofit.)
      */
     @Multipart
-    @POST("api/ai/upload-attachment")                                          // ← MỚI 2026-05-31
+    @POST("api/ai/upload-attachment")
     suspend fun uploadAttachment(
         @Part file: MultipartBody.Part,
     ): ApiResponse<AiUploadAttachmentDto>

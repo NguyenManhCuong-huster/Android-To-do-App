@@ -6,6 +6,13 @@ sealed interface AiChatItem {
     /** Placeholder hiển thị trong list khi AI đang xử lý (3 chấm nhảy). */
     data object Thinking : AiChatItem
 
+    /**
+     * Bong bóng assistant ĐANG stream — [content] cập nhật dần theo từng delta.
+     * Khác [Message] ở chỗ: chưa lưu, chưa có reference/copy, render markdown thô +
+     * con trỏ nhấp nháy. Khi stream xong sẽ được thay bằng [Message] hoàn chỉnh.
+     */
+    data class Streaming(val content: String) : AiChatItem
+
     data class Message(val message: AiMessage) : AiChatItem {
         val role: AiMessage.Role get() = message.role
         val content: String get() = message.content
@@ -31,12 +38,29 @@ sealed interface AiChatItem {
     }
 }
 
-/** Wrapper trả về cho repository — reply text + tool call summary + references. */
-data class AiChatResult(
-    val reply: String,
-    val toolCalls: List<AiToolCall>,
-    val references: List<AiReference> = emptyList(),   // ← MỚI 2026-06
-)
+/**
+ * 1 sự kiện trong luồng chat streaming (MỚI 2026-06). Repository phát ra dưới
+ * dạng Flow; ViewModel ráp lại thành UI (bong bóng stream + card tool-call).
+ */
+sealed interface AiStreamEvent {
+    /** 1 đoạn text mới của câu trả lời (nối thêm vào buffer hiện tại). */
+    data class Delta(val text: String) : AiStreamEvent
+
+    /** 1 tool vừa chạy xong (hiển thị card "AI đã làm gì"). */
+    data class Tool(val toolCall: AiToolCall) : AiStreamEvent
+
+    /**
+     * Kết thúc thành công: [reply] là text ĐẦY ĐỦ (nguồn chính thống, có thể
+     * khác buffer stream do dọn token), kèm [references] đã resolve.
+     */
+    data class Done(
+        val reply: String,
+        val references: List<AiReference>,
+    ) : AiStreamEvent
+
+    /** Lỗi giữa chừng. */
+    data class Error(val message: String) : AiStreamEvent
+}
 
 /**
  * AttachmentRef — UUID + tên file kèm mime/size để render chip trong bubble.

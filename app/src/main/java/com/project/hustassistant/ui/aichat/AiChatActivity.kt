@@ -21,6 +21,11 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import android.content.ClipData
+import android.content.ClipboardManager
+import io.noties.markwon.Markwon
+import io.noties.markwon.ext.strikethrough.StrikethroughPlugin
+import io.noties.markwon.ext.tables.TablePlugin
 import com.project.hustassistant.TodoApplication
 import com.project.hustassistant.data.ai.AiReference
 import com.project.hustassistant.data.ai.AttachmentRef
@@ -35,6 +40,22 @@ class AiChatActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityAiChatBinding
     private lateinit var adapter: AiMessageAdapter
+
+    private val markwon by lazy {
+        val density = resources.displayMetrics.density
+        fun px(dp: Int) = (dp * density).toInt()
+        Markwon.builder(this)
+            .usePlugin(TablePlugin.create { builder ->
+                builder
+                    .tableCellPadding(px(8))
+                    .tableBorderColor(0xFFCCCCCC.toInt())
+                    .tableBorderWidth(px(1))
+                    .tableHeaderRowBackgroundColor(0x14000000)
+                    .tableEvenRowBackgroundColor(0x0A000000)
+            })
+            .usePlugin(StrikethroughPlugin.create())
+            .build()
+    }
 
     private val chatContext: ChatContext? by lazy { ChatContext.readFrom(intent) }
     private val resumeSessionId: String? by lazy { intent.getStringExtra(EXTRA_RESUME_SESSION_ID) }
@@ -162,11 +183,21 @@ class AiChatActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         adapter = AiMessageAdapter(
+            markwon = markwon,
             onAttachmentTap = ::onAttachmentTap,
             onReferenceTap = ::onReferenceTap,
+            onCopy = ::copyToClipboard,
+            onEdit = { viewModel.editFrom(it) },
         )
         binding.rvMessages.adapter = adapter
         binding.rvMessages.layoutManager = LinearLayoutManager(this)
+    }
+
+    /** Copy nội dung 1 tin (markdown thô) vào clipboard. */
+    private fun copyToClipboard(text: String) {
+        val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        cm.setPrimaryClip(ClipData.newPlainText("AI", text))
+        Toast.makeText(this, "Đã sao chép", Toast.LENGTH_SHORT).show()
     }
 
     private fun setupListeners() {
@@ -223,6 +254,14 @@ class AiChatActivity : AppCompatActivity() {
                     }
 
                     renderPendingAttachments(s.pendingAttachments, s.uploadingCount)
+
+                    // One-shot: đổ nội dung tin được "Sửa" vào ô soạn.
+                    s.inputDraft?.let { draft ->
+                        binding.etInput.setText(draft)
+                        binding.etInput.setSelection(draft.length)
+                        binding.etInput.requestFocus()
+                        viewModel.consumeInputDraft()
+                    }
 
                     s.errorMessage?.let {
                         Toast.makeText(this@AiChatActivity, it, Toast.LENGTH_LONG).show()
