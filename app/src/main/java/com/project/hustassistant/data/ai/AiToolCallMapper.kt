@@ -38,6 +38,10 @@ object AiToolCallMapper {
             "web_search" -> parseWebSearch(result, dto.args)
             "create_grade" -> if (success) parseGradeCreated(result) else null
             "create_grades" -> if (success) parseGradesCreated(result) else null
+            "get_grades" -> if (success) parseGradesViewed(result) else null
+            "search_tasks" -> if (success) parseTasksFound(result) else null
+            "get_task" -> if (success) parseTaskRead(result) else null
+            "get_tags" -> if (success) parseTagsListed(result) else null
             else -> null
         }
 
@@ -161,6 +165,46 @@ object AiToolCallMapper {
             skippedCount = skipped,
         )
     }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun parseGradesViewed(result: Map<String, Any?>): Payload.GradesViewed {
+        val summary = result["summary"] as? Map<String, Any?> ?: emptyMap()
+        val eff = result["effective_params"] as? Map<String, Any?> ?: emptyMap()
+        return Payload.GradesViewed(
+            cpa = (summary["cpa"] as? Number)?.toDouble(),
+            classification = (summary["classification"] as? String)?.takeIf { it.isNotBlank() },
+            totalCourses = (result["total_courses"] as? Number)?.toInt() ?: 0,
+            semesterFilter = (eff["semester"] as? String)?.takeIf { it.isNotBlank() },
+        )
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun parseTasksFound(result: Map<String, Any?>): Payload.TasksFound {
+        val eff = result["effective_params"] as? Map<String, Any?> ?: emptyMap()
+        val typeRaw = (eff["task_type"] as? String)?.takeIf { it.isNotBlank() }
+        return Payload.TasksFound(
+            count = (result["count"] as? Number)?.toInt() ?: 0,
+            query = (eff["query"] as? String)?.takeIf { it.isNotBlank() },
+            taskType = typeRaw?.let { TaskKind.from(it) },
+            status = (eff["status"] as? String)?.takeIf { it.isNotBlank() },
+        )
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun parseTaskRead(result: Map<String, Any?>): Payload.TaskRead {
+        val task = result["task"] as? Map<String, Any?> ?: emptyMap()
+        return Payload.TaskRead(
+            title = (task["title"] as? String)?.takeIf { it.isNotBlank() },
+            taskType = TaskKind.from(task["task_type"] as? String),
+            isCompleted = task["is_completed"] as? Boolean ?: false,
+            startTimeIso = task["start_time"] as? String,
+            endTimeIso = task["end_time"] as? String,
+            tags = parseTags(task["tags"]),
+        )
+    }
+
+    private fun parseTagsListed(result: Map<String, Any?>): Payload.TagsListed =
+        Payload.TagsListed(count = (result["count"] as? Number)?.toInt() ?: 0)
 
     @Suppress("UNCHECKED_CAST")
     private fun parseTags(raw: Any?): List<TagRef> =

@@ -4,6 +4,7 @@ import com.project.hustassistant.network.ApiResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
@@ -30,6 +31,11 @@ data class GradeDto(
 )
 
 data class CreateGradeBody(
+    // id do client cấp (UUID ổn định) → server dùng luôn làm PK, KHÔNG cấp id mới.
+    // Đây là idempotency key: POST lại cùng id sẽ gộp về 1 dòng, không nhân bản.
+    val id: String,
+    // mod_time client (ISO) → server quyết LWW (so '>') + lưu đúng mốc này.
+    val mod_time: String? = null,
     val semester: String,
     val course_code: String,
     val course_name: String,
@@ -39,6 +45,7 @@ data class CreateGradeBody(
 )
 
 data class UpdateGradeBody(
+    val mod_time: String? = null,
     val semester: String,
     val course_code: String,
     val course_name: String,
@@ -61,8 +68,12 @@ interface GradeApi {
     suspend fun update(
         @Path("id") id: String,
         @Body body: UpdateGradeBody,
+        @Header("x-client-mod-time") clientModTime: String? = null,
     ): ApiResponse<GradeDto>
 
     @DELETE("api/grades/{id}")
-    suspend fun delete(@Path("id") id: String): ApiResponse<GradeDto>
+    suspend fun delete(
+        @Path("id") id: String,
+        @Header("x-client-mod-time") clientModTime: String? = null,
+    ): ApiResponse<GradeDto>
 }

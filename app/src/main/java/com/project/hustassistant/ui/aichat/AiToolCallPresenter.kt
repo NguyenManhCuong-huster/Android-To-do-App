@@ -34,6 +34,10 @@ object AiToolCallPresenter {
         is Payload.WebSearched -> webSearch(call, p)
         is Payload.GradeCreated -> gradeCreated(p)
         is Payload.GradesCreated -> gradesCreated(p)
+        is Payload.GradesViewed -> gradesViewed(p)
+        is Payload.TasksFound -> tasksFound(p)
+        is Payload.TaskRead -> taskRead(p)
+        is Payload.TagsListed -> tagsListed(p)
         null -> fallback(call)
     }
 
@@ -237,6 +241,79 @@ object AiToolCallPresenter {
         )
     }
 
+    // ─────────────────────────────── get_grades ────────────────────────
+    private fun gradesViewed(p: Payload.GradesViewed): AiChatItem.ToolCall {
+        val scope = p.semesterFilter?.let { semesterLabel(it) } ?: "tất cả học kỳ"
+        val title = if (p.totalCourses == 0) {
+            "Chưa có kết quả học tập"
+        } else {
+            "Đã xem kết quả học tập ($scope)"
+        }
+        val subtitle = if (p.totalCourses == 0) {
+            "Chưa nhập điểm môn nào"
+        } else {
+            listOfNotNull(
+                p.cpa?.let { "CPA %.2f".format(it) },
+                p.classification,
+                "${p.totalCourses} học phần",
+            ).joinToString(" • ").ifBlank { null }
+        }
+        return AiChatItem.ToolCall(
+            name = "get_grades",
+            success = true,
+            title = title,
+            subtitle = subtitle,
+        )
+    }
+
+    // ─────────────────────────────── search_tasks ─────────────────────
+    private fun tasksFound(p: Payload.TasksFound): AiChatItem.ToolCall {
+        val typeLabel = p.taskType?.let { taskTypeLabel(it) }
+        val title = if (p.count == 0) "Không tìm thấy ${typeLabel ?: "công việc"} phù hợp"
+        else "Đã tìm thấy ${p.count} ${typeLabel ?: "công việc"}"
+        val statusLabel = when (p.status?.uppercase()) {
+            "PENDING" -> "chưa xong"
+            "COMPLETED" -> "đã xong"
+            else -> null
+        }
+        val subtitle = listOfNotNull(
+            p.query?.let { "Từ khoá: \"$it\"" },
+            statusLabel,
+        ).joinToString(" • ").ifBlank { if (p.count > 0) "Sắp xếp theo thời gian" else null }
+        return AiChatItem.ToolCall("search_tasks", true, title, subtitle)
+    }
+
+    // ──────────────────────────────── get_task ────────────────────────
+    private fun taskRead(p: Payload.TaskRead): AiChatItem.ToolCall {
+        val typeLabel = taskTypeLabel(p.taskType)
+        val deadlineLabel = (p.startTimeIso ?: p.endTimeIso)?.let { formatDeadline(it) }
+        val subtitle = listOfNotNull(
+            if (p.isCompleted) "đã xong" else null,
+            deadlineLabel,
+        ).joinToString(" • ").ifBlank { null }
+        return AiChatItem.ToolCall(
+            name = "get_task",
+            success = true,
+            title = "Đã xem $typeLabel: ${p.title ?: "(không tiêu đề)"}",
+            subtitle = subtitle,
+            tags = p.tags.map { AiChatItem.ToolCall.TagChip(it.name, it.colorHex) },
+        )
+    }
+
+    // ──────────────────────────────── get_tags ────────────────────────
+    private fun tagsListed(p: Payload.TagsListed): AiChatItem.ToolCall = AiChatItem.ToolCall(
+        name = "get_tags",
+        success = true,
+        title = if (p.count == 0) "User chưa có nhãn nào" else "Đã lấy ${p.count} nhãn",
+        subtitle = null,
+    )
+
+    private fun taskTypeLabel(kind: TaskKind): String = when (kind) {
+        TaskKind.CLASS -> "lịch học"
+        TaskKind.EXAM -> "lịch thi"
+        TaskKind.TODO -> "việc cần làm"
+    }
+
     /** "20251" → "HK1 · 2025". Trả nguyên mã nếu không parse được. */
     private fun semesterLabel(code: String): String {
         if (code.length < 5) return if (code.isBlank()) "" else "Kỳ $code"
@@ -263,6 +340,10 @@ object AiToolCallPresenter {
                 "get_news" -> "Không đọc được tin"
                 "create_grade" -> "Không ghi được điểm"
                 "create_grades" -> "Không ghi được bảng điểm"
+                "get_grades" -> "Không xem được kết quả học tập"
+                "search_tasks" -> "Không xem được danh sách công việc"
+                "get_task" -> "Không xem được chi tiết công việc"
+                "get_tags" -> "Không lấy được danh sách nhãn"
                 else -> "Lỗi khi chạy: ${call.name}"
             }
             val knownTool = call.name in KNOWN_FAILING_TOOLS
@@ -321,6 +402,7 @@ object AiToolCallPresenter {
     private val KNOWN_FAILING_TOOLS = setOf(
         "create_task", "create_weekly_tasks",
         "search_emails", "get_email", "search_news", "get_news",
-        "create_grade", "create_grades",
+        "create_grade", "create_grades", "get_grades",
+        "search_tasks", "get_task", "get_tags",
     )
 }

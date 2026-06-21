@@ -104,6 +104,37 @@ data class AiToolCall(
             val updatedCount: Int,
             val skippedCount: Int,
         ) : Payload
+
+        /** get_grades — xem kết quả học tập (GPA/CPA) để AI tư vấn. */
+        data class GradesViewed(
+            val cpa: Double?,                 // null = chưa môn nào có điểm
+            val classification: String?,      // xếp loại học lực, null nếu chưa có
+            val totalCourses: Int,
+            val semesterFilter: String?,      // null = tất cả các kỳ
+        ) : Payload
+
+        /** search_tasks — xem danh sách task/lịch của user. */
+        data class TasksFound(
+            val count: Int,
+            val query: String?,
+            val taskType: TaskKind?,          // null = không lọc loại
+            val status: String?,              // PENDING | COMPLETED | ALL
+        ) : Payload
+
+        /** get_task — xem chi tiết 1 task. */
+        data class TaskRead(
+            val title: String?,
+            val taskType: TaskKind,
+            val isCompleted: Boolean,
+            val startTimeIso: String?,
+            val endTimeIso: String?,
+            val tags: List<TagRef>,
+        ) : Payload
+
+        /** get_tags — lấy danh sách nhãn của user. */
+        data class TagsListed(
+            val count: Int,
+        ) : Payload
     }
 
     /** Loại task (raw từ server). */

@@ -34,10 +34,12 @@ import com.project.hustassistant.data.userinfo.DefaultUserInfoRepository
 import com.project.hustassistant.data.userinfo.UserInfoRepository
 import com.project.hustassistant.data.userinfo.network.UserInfoApi
 import com.project.hustassistant.data.userinfo.network.UserInfoRemoteDataSource
+import com.project.hustassistant.data.sync.SyncManager
 import com.project.hustassistant.network.ApiClient
 import com.project.hustassistant.network.AuthApi
 import com.project.hustassistant.network.NetworkManager
 import com.project.hustassistant.network.ServerConfig
+import com.project.hustassistant.network.SyncApi
 import com.project.hustassistant.network.TokenStore
 import com.project.hustassistant.notification.PermissionManager
 import com.project.hustassistant.notification.TaskNotificationManager
@@ -66,6 +68,7 @@ class AppContainer(val context: Context) {
     val taskApi: TaskApi by lazy { apiClient.create(TaskApi::class.java) }
     val tagApi: TagApi by lazy { apiClient.create(TagApi::class.java) }
     val gradeApi: GradeApi by lazy { apiClient.create(GradeApi::class.java) }              // ← MỚI
+    val syncApi: SyncApi by lazy { apiClient.create(SyncApi::class.java) }
     val emailApi: EmailApi by lazy { apiClient.create(EmailApi::class.java) }
     val accountApi: AccountApi by lazy { apiClient.create(AccountApi::class.java) }
     val userInfoApi: UserInfoApi by lazy { apiClient.create(UserInfoApi::class.java) }
@@ -91,11 +94,25 @@ class AppContainer(val context: Context) {
     }
     private val newsNetworkDataSource: NewsNetwork by lazy { NewsNetworkDataSource(newsApi) }
 
+    // ── 5b. SYNC (batch /api/sync, điều phối tập trung cho Task+Tag+cross-ref) ──
+    val syncManager: SyncManager by lazy {
+        SyncManager(
+            syncApi        = syncApi,
+            taskDao        = database.taskDao(),
+            tagDao         = database.tagDao(),
+            crossRefDao    = database.taskTagCrossRefDao(),
+            authManager    = authManager,
+            networkManager = networkManager,
+            context        = context,
+            dispatcher     = Dispatchers.IO,
+        )
+    }
+
     // ── 6. REPOSITORIES ────────────────────────────────
     val taskRepository: TaskRepository by lazy {
         DefaultTaskRepository(
-            networkDataSource = taskNetworkDataSource,
             localDataSource = database.taskDao(),
+            syncManager = syncManager,
             dispatcher = Dispatchers.IO,
             scope = appScope,
             authManager = authManager,
@@ -106,7 +123,7 @@ class AppContainer(val context: Context) {
     val tagRepository: TagRepository by lazy {
         DefaultTagRepository(
             tagDao = database.tagDao(),
-            networkDataSource = tagNetworkDataSource,
+            syncManager = syncManager,
             authManager = authManager,
             networkManager = networkManager,
             scope = appScope,
@@ -128,6 +145,7 @@ class AppContainer(val context: Context) {
     val taskTagRepository: TaskTagRepository by lazy {
         DefaultTaskTagRepository(
             taskTagCrossRefDao = database.taskTagCrossRefDao(),
+            taskDao = database.taskDao(),
             dispatcher = Dispatchers.IO,
         )
     }

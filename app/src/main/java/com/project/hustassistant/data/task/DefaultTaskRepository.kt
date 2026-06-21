@@ -5,6 +5,7 @@ import com.project.hustassistant.authentication.AuthManager
 import com.project.hustassistant.data.task.local.LocalTask
 import com.project.hustassistant.data.task.local.TaskDAO
 import com.project.hustassistant.data.task.network.NetworkDataSource
+import com.project.hustassistant.data.sync.SyncManager
 import com.project.hustassistant.network.NetworkManager
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -12,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
 import java.util.UUID
 
@@ -65,8 +67,8 @@ import java.util.UUID
  *  LocalTaskTagCrossRef).
  */
 class DefaultTaskRepository(
-    private val networkDataSource: NetworkDataSource,
     private val localDataSource: TaskDAO,
+    private val syncManager: SyncManager,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val scope: CoroutineScope,
     private val authManager: AuthManager,
@@ -191,130 +193,20 @@ class DefaultTaskRepository(
     private fun shouldSync(): Boolean =
         networkManager.isOnline() && authManager.isUserLoggedIn()
 
-    /** Background sync — không block caller, swallow lỗi. */
+    // Sync giờ do SyncManager điều phối tập trung (batch /api/sync, ordered tags→tasks,
+    // LWW ở server, id ổn định nên KHÔNG còn reassignId). Repo chỉ kích hoạt.
     private fun trySync() {
         if (!shouldSync()) return
         scope.launch {
             try {
-                sync()
+                syncManager.sync()
             } catch (e: Exception) {
                 Log.e(TAG, "Background sync failed", e)
             }
         }
     }
 
-    override suspend fun sync() {
-        if (!shouldSync()) return
-        withContext(dispatcher) {
-            // 1) PUSH local → server (đẩy mọi dirty trước để không bị PULL ghi đè)
-            pushLocalChanges()
-            // 2) PULL server → local (LWW theo modTime)
-            pullRemoteChanges()
-        }
-    }
-
-    /**
-     * PUSH: đẩy mọi LocalTask dirty lên server.
-     *
-     * Phân biệt POST/PUT/DELETE bằng cách so id local với danh sách id server hiện có:
-     *  - id ∉ server → POST (task tạo offline)
-     *  - id ∈ server + isDeleted → DELETE
-     *  - id ∈ server + !isDeleted → PUT
-     */
-    private suspend fun pushLocalChanges() {
-        val dirty = localDataSource.getDirtyTasks()
-        if (dirty.isEmpty()) return
-
-        // Snapshot id server (1 round-trip duy nhất cho cả batch push)
-        val remoteIds: Set<String> = networkDataSource.loadTasks()
-            .filter { !it.isDeleted }
-            .map { it.id }
-            .toSet()
-
-        for (local in dirty) {
-            try {
-                pushOne(local, remoteIds)
-            } catch (e: Exception) {
-                Log.e(TAG, "Push task ${local.id} failed; will retry next sync", e)
-                // Để dirty=true → lần sync sau sẽ thử lại
-            }
-        }
-    }
-
-    private suspend fun pushOne(local: LocalTask, remoteIds: Set<String>) {
-        when {
-            // (1) Đã xoá local
-            local.isDeleted -> {
-                if (local.id in remoteIds) {
-                    val ok = networkDataSource.deleteTask(local.id, local.modTime)
-                    if (ok) localDataSource.hardDeleteById(local.id)
-                } else {
-                    // Task tạo offline rồi xoá luôn → server không biết, xoá thẳng local
-                    localDataSource.hardDeleteById(local.id)
-                }
-            }
-
-            // (2) Task tạo offline → POST, đổi id theo server cấp
-            local.id !in remoteIds -> {
-                val external = local.toExternal()
-                val remote = networkDataSource.createTask(external)
-                when {
-                    remote == null -> Unit // lỗi → giữ dirty=true, retry sau
-                    remote.id != local.id -> localDataSource.reassignId(local.id, remote.id)
-                    else -> localDataSource.markSynced(local.id)
-                }
-            }
-
-            // (3) Task đã có trên server → PUT
-            else -> {
-                val external = local.toExternal()
-                val remote = networkDataSource.updateTask(external)
-                if (remote != null) {
-                    localDataSource.markSynced(local.id)
-                }
-                // Nếu null (vd 409 LWW conflict) → giữ dirty.
-                // pullRemoteChanges sẽ xử lý ở vòng kế tiếp:
-                //   server.modTime > local.modTime + !isDirty → ghi đè bằng server,
-                //   nhưng vì còn isDirty=true ở đây nên local không bị ghi đè ngay.
-                //   Lần sync sau push lại với modTime đã cập nhật.
-            }
-        }
-    }
-
-    /**
-     * PULL: kéo task từ server về local theo Last-Write-Wins.
-     *
-     * Quy tắc:
-     *  - remote.isDeleted=true                         → hard-delete local nếu có
-     *  - local null                                    → upsert remote
-     *  - remote.modTime > local.modTime && !isDirty    → upsert remote (server mới hơn)
-     *  - ngược lại                                     → giữ local (đang dirty hoặc local mới hơn)
-     */
-    private suspend fun pullRemoteChanges() {
-        val remoteTasks = networkDataSource.loadTasks()
-        if (remoteTasks.isEmpty()) return
-
-        for (remote in remoteTasks) {
-            val local = localDataSource.getTaskById(remote.id)
-            when {
-                remote.isDeleted -> {
-                    if (local != null) localDataSource.hardDeleteById(remote.id)
-                }
-
-                local == null -> {
-                    localDataSource.upsertTask(remote.toLocal(isDirty = false))
-                }
-
-                remote.modTime > local.modTime && !local.isDirty -> {
-                    // Server mới hơn và local KHÔNG còn dirty → ghi đè bằng giá trị server.
-                    // Sau migration 003, server đã sync đủ priority/location nên không cần
-                    // bảo tồn các field đó từ local nữa.
-                    localDataSource.upsertTask(remote.toLocal(isDirty = false))
-                }
-                // else: giữ local (local mới hơn hoặc đang dirty chờ push lại)
-            }
-        }
-    }
+    override suspend fun sync() = syncManager.sync()
 
     companion object {
         private const val TAG = "TaskRepo"

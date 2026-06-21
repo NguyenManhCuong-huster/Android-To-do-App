@@ -96,10 +96,15 @@ class GradesViewModel(
         }
     }
 
-    /** Tìm TẤT CẢ grades trùng mã học phần (bất kể kỳ), trả list rỗng nếu không có. */
-    fun findAllDuplicates(courseCode: String, excludeId: String?): List<Grade> =
+    /**
+     * Tìm grades trùng mã học phần TRONG CÙNG HỌC KỲ (bỏ qua [excludeId] = bản đang sửa),
+     * trả list rỗng nếu không có. Khác kỳ (học lại) KHÔNG coi là trùng → tạo bản mới bình
+     * thường, không bung dialog. Chỉ trùng (kỳ + mã) mới hỏi sửa-hay-tạo-mới.
+     */
+    fun findAllDuplicates(semester: String, courseCode: String, excludeId: String?): List<Grade> =
         grades.value.filter {
             it.id != excludeId &&
+                it.semester.trim() == semester.trim() &&
                 it.courseCode.equals(courseCode.trim(), ignoreCase = true)
         }
 

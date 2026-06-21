@@ -170,9 +170,10 @@ class GradesActivity : AppCompatActivity() {
         letter: String,
         editingGradeId: String?,
     ) {
+        // duplicates đều CÙNG kỳ với bản đang nhập → nhãn không cần lặp lại học kỳ.
         val labels = duplicates.map { g ->
             val letterLabel = g.letterGrade.ifBlank { "chưa có điểm" }
-            "Kỳ ${g.semester} | ${g.courseName} | $letterLabel | ${g.credits}TC"
+            "${g.courseName} | $letterLabel | ${g.credits}TC"
         }.toTypedArray()
         val checked = BooleanArray(duplicates.size)
 
@@ -302,8 +303,9 @@ class GradesActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // Kiểm tra trùng mã HP (bất kể kỳ, bất kể create/edit).
-            val duplicates = viewModel.findAllDuplicates(code, grade?.id)
+            // Kiểm tra trùng mã HP TRONG CÙNG KỲ (bất kể create/edit). Khác kỳ = học lại,
+            // không tính là trùng.
+            val duplicates = viewModel.findAllDuplicates(semester, code, grade?.id)
             if (duplicates.isNotEmpty()) {
                 dialog.dismiss()
                 showDuplicateDialog(

@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
 import java.util.UUID
 
@@ -30,6 +31,9 @@ import java.util.UUID
  * SYNC ([sync]):
  *   - PUSH dirty: isDeleted → DELETE; id chưa có ở server → POST (đổi id local theo
  *     server cấp); id đã có → PUT.
+ *   - PUSH self-heal: grade local CÒN SỐNG mà server không hề biết (kể cả tombstone) →
+ *     re-upload. Cứu desync sau khi DB server bị reset / đổi backend (local clean nên
+ *     dirty-only push bỏ sót). Tombstone vẫn được tôn trọng → không hồi sinh môn đã xoá.
  *   - PULL: GET /api/grades?include_deleted=true → upsert local theo Last-Write-Wins
  *     (so sánh modTime).
  *
@@ -130,6 +134,12 @@ class DefaultGradeRepository(
     private fun shouldSync(): Boolean =
         networkManager.isOnline() && authManager.isUserLoggedIn()
 
+    // GUARD chống sync chạy CHỒNG NHAU. GradesViewModel có nhiều StateFlow, mỗi cái
+    // observe getGradesStream() → trySync() → trước đây nổ ra 4-7 sync SONG SONG, tất
+    // cả cùng thấy server rỗng và cùng POST orphan → NHÂN BẢN môn. tryLock gộp các lần
+    // trùng: đang có sync chạy thì bỏ qua (dirty flag vẫn còn → lần sync sau lo nốt).
+    private val syncMutex = Mutex()
+
     private fun trySync() {
         if (!shouldSync()) return
         scope.launch {
@@ -143,24 +153,42 @@ class DefaultGradeRepository(
 
     override suspend fun sync() {
         if (!shouldSync()) return
-        withContext(dispatcher) {
-            pushLocalChanges() // đẩy dirty trước để không bị PULL ghi đè
-            pullRemoteChanges()
+        if (!syncMutex.tryLock()) return        // đã có sync đang chạy → gộp, bỏ lần này
+        try {
+            withContext(dispatcher) {
+                pushLocalChanges() // đẩy dirty trước để không bị PULL ghi đè
+                pullRemoteChanges()
+            }
+        } finally {
+            syncMutex.unlock()
         }
     }
 
     private suspend fun pushLocalChanges() {
-        val dirty = gradeDao.getDirtyGrades()
-        if (dirty.isEmpty()) return
+        // 1 lần GET, dùng cho cả quyết định create/update LẪN phát hiện orphan.
+        // loadGrades() đã include_deleted=true → biết được cả tombstone.
+        val remote    = networkDataSource.loadGrades()
+        val knownIds  = remote.map { it.id }.toSet()                       // server BIẾT id này (active hoặc đã xoá)
+        val activeIds = remote.filter { !it.isDeleted }.map { it.id }.toSet()
 
-        val remoteIds: Set<String> = networkDataSource.loadGrades()
-            .filter { !it.isDeleted }
-            .map { it.id }
-            .toSet()
+        val dirty    = gradeDao.getDirtyGrades()
+        val dirtyIds = dirty.map { it.id }.toSet()
 
-        for (local in dirty) {
+        // SELF-HEAL: grade local còn sống mà server CHƯA TỪNG biết (không có cả tombstone)
+        // → re-upload. Xảy ra sau khi DB server bị reset / đổi backend. Loại trừ id đã có
+        // tombstone để KHÔNG hồi sinh môn người dùng đã cố ý xoá (pull sẽ tự xoá chúng).
+        val orphans = gradeDao.getAll()
+            .filter { it.id !in knownIds && it.id !in dirtyIds }
+
+        val toPush = dirty + orphans
+        if (toPush.isEmpty()) return
+        if (orphans.isNotEmpty()) {
+            Log.w(TAG, "Self-heal: re-uploading ${orphans.size} grade(s) absent on server")
+        }
+
+        for (local in toPush) {
             try {
-                pushOne(local, remoteIds)
+                pushOne(local, activeIds)
             } catch (e: Exception) {
                 Log.e(TAG, "Push grade ${local.id} failed; retry next sync", e)
             }
@@ -172,27 +200,29 @@ class DefaultGradeRepository(
             // (1) Đã xoá local
             local.isDeleted -> {
                 if (local.id in remoteIds) {
-                    val ok = networkDataSource.deleteGrade(local.id)
+                    val ok = networkDataSource.deleteGrade(local.id, local.modTime)
                     if (ok) gradeDao.hardDeleteById(local.id)
                 } else {
                     gradeDao.hardDeleteById(local.id)
                 }
             }
-            // (2) Tạo offline → POST, đổi id theo server cấp
+            // (2) Chưa có trên server → POST kèm local.id. Server dùng LUÔN id này (idempotency
+            //     key) nên không còn cảnh "server cấp id khác" → khỏi reassign. POST lại cùng id
+            //     (race/self-heal) chỉ gộp về 1 dòng. reassignId vẫn giữ làm lưới an toàn phòng
+            //     server (cũ) trả id khác.
             local.id !in remoteIds -> {
                 val remote = networkDataSource.createGrade(
+                    id           = local.id,
                     semester     = local.semester,
                     courseCode   = local.courseCode,
                     courseName   = local.courseName,
                     courseNameEn = local.courseNameEn,
                     credits      = local.credits,
                     letterGrade  = local.letterGrade,
+                    modTime      = local.modTime,
                 )
-                when {
-                    remote == null -> Unit
-                    remote.id != local.id -> gradeDao.reassignId(local.id, remote.id)
-                    else -> gradeDao.markSynced(local.id)
-                }
+                // Server dùng LUÔN id client → remote.id == local.id, không còn reassign.
+                if (remote != null) gradeDao.markSynced(local.id)
             }
             // (3) Đã có trên server → PUT
             else -> {
@@ -204,6 +234,7 @@ class DefaultGradeRepository(
                     courseNameEn = local.courseNameEn,
                     credits      = local.credits,
                     letterGrade  = local.letterGrade,
+                    modTime      = local.modTime,
                 )
                 if (remote != null) gradeDao.markSynced(local.id)
             }

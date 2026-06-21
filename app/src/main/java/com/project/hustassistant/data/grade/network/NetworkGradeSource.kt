@@ -1,5 +1,6 @@
 package com.project.hustassistant.data.grade.network
 
+import android.util.Log
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
@@ -9,6 +10,10 @@ import java.util.TimeZone
  *
  * Mọi method bắt exception và trả giá trị "trống" (null/false/emptyList) để caller
  * (repository) không phải try/catch — phù hợp chiến lược local-first best-effort sync.
+ *
+ * ⚠️ MỌI catch ĐỀU LOG lý do (TAG="GradeNet"): trước đây nuốt im lặng nên khi grade
+ * không sync lên server thì không có manh mối nào trong Logcat. Lọc Logcat theo
+ * "GradeNet" để thấy chính xác request nào fail và vì sao (401, 400 validate, timeout…).
  */
 class NetworkGradeSource(
     private val gradeApi: GradeApi,
@@ -18,20 +23,25 @@ class NetworkGradeSource(
         gradeApi.list(includeDeleted = true).data
             ?.map { it.toNetworkGrade() }
             ?: emptyList()
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        Log.e(TAG, "loadGrades (GET /api/grades) failed", e)
         emptyList()
     }
 
     override suspend fun createGrade(
+        id: String,
         semester: String,
         courseCode: String,
         courseName: String,
         courseNameEn: String,
         credits: Int,
         letterGrade: String,
+        modTime: Long,
     ): NetworkGrade? = try {
         gradeApi.create(
             CreateGradeBody(
+                id             = id,
+                mod_time       = toIso(modTime),
                 semester       = semester,
                 course_code    = courseCode,
                 course_name    = courseName,
@@ -40,7 +50,8 @@ class NetworkGradeSource(
                 letter_grade   = letterGrade.ifBlank { null },
             ),
         ).data?.toNetworkGrade()
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        Log.e(TAG, "createGrade (POST /api/grades) failed for $courseCode @ $semester", e)
         null
     }
 
@@ -52,10 +63,12 @@ class NetworkGradeSource(
         courseNameEn: String,
         credits: Int,
         letterGrade: String,
+        modTime: Long,
     ): NetworkGrade? = try {
         gradeApi.update(
             id,
             UpdateGradeBody(
+                mod_time       = toIso(modTime),
                 semester       = semester,
                 course_code    = courseCode,
                 course_name    = courseName,
@@ -63,14 +76,17 @@ class NetworkGradeSource(
                 credits        = credits,
                 letter_grade   = letterGrade.ifBlank { null },
             ),
+            clientModTime = toIso(modTime),
         ).data?.toNetworkGrade()
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        Log.e(TAG, "updateGrade (PUT /api/grades/$id) failed", e)
         null
     }
 
-    override suspend fun deleteGrade(id: String): Boolean = try {
-        gradeApi.delete(id).success
-    } catch (_: Exception) {
+    override suspend fun deleteGrade(id: String, modTime: Long): Boolean = try {
+        gradeApi.delete(id, clientModTime = toIso(modTime)).success
+    } catch (e: Exception) {
+        Log.e(TAG, "deleteGrade (DELETE /api/grades/$id) failed", e)
         false
     }
 
@@ -86,6 +102,16 @@ class NetworkGradeSource(
         isDeleted    = is_deleted ?: false,
         modTime      = parseIso(mod_time),
     )
+
+    private companion object {
+        private const val TAG = "GradeNet"
+    }
+
+    private fun toIso(epochMs: Long): String? =
+        if (epochMs <= 0L) null
+        else SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+            .apply { timeZone = TimeZone.getTimeZone("UTC") }
+            .format(java.util.Date(epochMs))
 
     private fun parseIso(iso: String?): Long {
         if (iso.isNullOrBlank()) return 0L

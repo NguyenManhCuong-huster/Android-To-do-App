@@ -4,7 +4,7 @@ import android.util.Log
 import com.project.hustassistant.authentication.AuthManager
 import com.project.hustassistant.data.tag.local.LocalTag
 import com.project.hustassistant.data.tag.local.TagDAO
-import com.project.hustassistant.data.tag.network.NetworkDataSource
+import com.project.hustassistant.data.sync.SyncManager
 import com.project.hustassistant.network.NetworkManager
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
 import java.util.UUID
 
@@ -46,7 +47,7 @@ import java.util.UUID
  */
 class DefaultTagRepository(
     private val tagDao: TagDAO,
-    private val networkDataSource: NetworkDataSource,
+    private val syncManager: SyncManager,
     private val authManager: AuthManager,
     private val networkManager: NetworkManager,
     private val scope: CoroutineScope,
@@ -132,120 +133,19 @@ class DefaultTagRepository(
     private fun shouldSync(): Boolean =
         networkManager.isOnline() && authManager.isUserLoggedIn()
 
-    /** Background sync — không block caller, swallow lỗi. */
+    // Sync giờ do SyncManager điều phối tập trung (batch /api/sync). Repo chỉ kích hoạt.
     private fun trySync() {
         if (!shouldSync()) return
         scope.launch {
             try {
-                sync()
+                syncManager.sync()
             } catch (e: Exception) {
                 Log.e(TAG, "Background sync failed", e)
             }
         }
     }
 
-    override suspend fun sync() {
-        if (!shouldSync()) return
-        withContext(dispatcher) {
-            // 1) PUSH local → server (đẩy mọi dirty trước để không bị PULL ghi đè)
-            pushLocalChanges()
-            // 2) PULL server → local (LWW)
-            pullRemoteChanges()
-        }
-    }
-
-    /**
-     * PUSH: đẩy mọi LocalTag dirty lên server.
-     *
-     * Phân biệt POST/PUT/DELETE bằng cách so id local với danh sách id server hiện có:
-     *  - id ∉ server → POST (tag tạo offline)
-     *  - id ∈ server + isDeleted → DELETE
-     *  - id ∈ server + !isDeleted → PUT
-     */
-    private suspend fun pushLocalChanges() {
-        val dirty = tagDao.getDirtyTags()
-        if (dirty.isEmpty()) return
-
-        // Lấy snapshot id server (1 round-trip duy nhất cho cả batch push)
-        val remoteIds: Set<String> = networkDataSource.loadTags()
-            .filter { !it.isDeleted }
-            .map { it.id }
-            .toSet()
-
-        for (local in dirty) {
-            try {
-                pushOne(local, remoteIds)
-            } catch (e: Exception) {
-                Log.e(TAG, "Push tag ${local.id} failed; will retry next sync", e)
-                // Để dirty=true → lần sync sau sẽ thử lại
-            }
-        }
-    }
-
-    private suspend fun pushOne(local: LocalTag, remoteIds: Set<String>) {
-        when {
-            // (1) Đã xoá local
-            local.isDeleted -> {
-                if (local.id in remoteIds) {
-                    val ok = networkDataSource.deleteTag(local.id)
-                    if (ok) tagDao.hardDeleteById(local.id)
-                } else {
-                    // Tag tạo offline rồi xoá luôn → server không biết, xoá thẳng local
-                    tagDao.hardDeleteById(local.id)
-                }
-            }
-            // (2) Tag tạo offline → POST, đổi id theo server cấp
-            local.id !in remoteIds -> {
-                val remote = networkDataSource.createTag(local.tagName, local.colorHex)
-                when {
-                    remote == null -> Unit // lỗi → giữ dirty=true, retry sau
-                    remote.id != local.id -> tagDao.reassignId(local.id, remote.id)
-                    else -> tagDao.markSynced(local.id)
-                }
-            }
-            // (3) Tag đã có trên server → PUT
-            else -> {
-                val remote = networkDataSource.updateTag(
-                    id = local.id,
-                    name = local.tagName,
-                    colorHex = local.colorHex,
-                )
-                if (remote != null) tagDao.markSynced(local.id)
-            }
-        }
-    }
-
-    /**
-     * PULL: kéo tag từ server về local theo Last-Write-Wins.
-     *
-     * Quy tắc:
-     *  - remote.isDeleted=true       → hard-delete local nếu có
-     *  - local null                  → upsert remote
-     *  - remote.modTime > local.modTime → upsert remote (server mới hơn)
-     *  - ngược lại                   → giữ local (đang dirty hoặc local mới hơn)
-     */
-    private suspend fun pullRemoteChanges() {
-        val remoteTags = networkDataSource.loadTags()
-        if (remoteTags.isEmpty()) return
-
-        for (remote in remoteTags) {
-            val local = tagDao.getById(remote.id)
-            when {
-                remote.isDeleted -> {
-                    if (local != null) tagDao.hardDeleteById(remote.id)
-                }
-
-                local == null -> {
-                    tagDao.upsert(remote.toLocal(isDirty = false))
-                }
-
-                remote.modTime > local.modTime -> {
-                    tagDao.upsert(remote.toLocal(isDirty = false))
-                }
-                // else: giữ local (local mới hơn hoặc đang dirty chờ push lại)
-            }
-        }
-    }
+    override suspend fun sync() = syncManager.sync()
 
     companion object {
         private const val TAG = "TagRepo"

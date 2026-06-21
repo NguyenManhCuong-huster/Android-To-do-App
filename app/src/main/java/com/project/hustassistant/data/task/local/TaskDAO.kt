@@ -82,6 +82,14 @@ interface TaskDAO {
     suspend fun markSynced(id: String)
 
     /**
+     * Đánh dấu task cần đẩy lại (kèm cập nhật modTime) — dùng khi tập tag của task
+     * thay đổi: cross-ref đổi nhưng bản thân task phải dirty để SyncManager đẩy
+     * `tag_ids` mới lên server (server đối chiếu cross-ref theo task).
+     */
+    @Query("UPDATE task SET isDirty = 1, modTime = :modTime WHERE id = :id")
+    suspend fun markDirty(id: String, modTime: Long)
+
+    /**
      * Đổi id của task — dùng khi server cấp id mới cho task tạo offline.
      *
      * QUAN TRỌNG: yêu cầu task_tag_cross_ref khai báo
