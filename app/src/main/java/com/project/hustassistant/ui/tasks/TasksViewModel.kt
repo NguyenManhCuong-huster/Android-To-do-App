@@ -103,6 +103,15 @@ class TasksViewModel(
     fun updateTaskCompletion(taskId: String, isCompleted: Boolean) {
         viewModelScope.launch {
             repository.updateTaskCompletion(taskId, isCompleted)
+            // Hoàn thành → huỷ nhắc (khỏi nhắc việc đã xong). Bỏ hoàn thành → đặt lại nhắc
+            // theo giờ bắt đầu (idempotent, tự bỏ qua nếu mốc đã qua).
+            if (isCompleted) {
+                taskNotificationManager.cancelNotification(taskId)
+            } else {
+                repository.getTask(taskId)?.let { t ->
+                    taskNotificationManager.scheduleTaskNotification(t.id, t.title, t.description, t.start)
+                }
+            }
         }
     }
 

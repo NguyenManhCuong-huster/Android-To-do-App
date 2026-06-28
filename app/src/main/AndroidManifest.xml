@@ -184,6 +184,18 @@
             android:enabled="true"
             android:exported="false" />
 
+        <!-- Đặt lại nhắc việc sau reboot / cập nhật app (alarm bị xoá ở 2 trường hợp này).
+             exported=true để nhận broadcast hệ thống BOOT_COMPLETED. -->
+        <receiver
+            android:name=".notification.BootReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
         <!-- ═══════════════════════════════════════════════════
              PROVIDERS
              ═══════════════════════════════════════════════════ -->

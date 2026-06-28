@@ -103,6 +103,7 @@ class AppContainer(val context: Context) {
             crossRefDao    = database.taskTagCrossRefDao(),
             authManager    = authManager,
             networkManager = networkManager,
+            notificationManager = notificationManager,
             context        = context,
             dispatcher     = Dispatchers.IO,
         )

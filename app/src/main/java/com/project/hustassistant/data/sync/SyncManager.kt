@@ -16,6 +16,7 @@ import com.project.hustassistant.network.SyncTagPull
 import com.project.hustassistant.network.SyncTagPush
 import com.project.hustassistant.network.SyncTaskPull
 import com.project.hustassistant.network.SyncTaskPush
+import com.project.hustassistant.notification.TaskNotificationManager
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -47,6 +48,7 @@ class SyncManager(
     private val crossRefDao: TaskTagCrossRefDAO,
     private val authManager: AuthManager,
     private val networkManager: NetworkManager,
+    private val notificationManager: TaskNotificationManager,
     context: Context,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
@@ -165,7 +167,10 @@ class SyncManager(
         val local = taskDao.getTaskById(tk.id)
         if (local?.isDirty == true) return                      // bảo vệ bản chưa push
         if (tk.is_deleted) {
-            if (local != null) taskDao.hardDeleteById(tk.id)    // CASCADE xoá cross-ref
+            if (local != null) {
+                taskDao.hardDeleteById(tk.id)                   // CASCADE xoá cross-ref
+                notificationManager.cancelNotification(tk.id)   // task bị xoá ở thiết bị khác → dọn alarm để khỏi nhắc ma
+            }
             return
         }
         taskDao.upsertTask(
@@ -186,6 +191,15 @@ class SyncManager(
             if (tagDao.getById(tag.id) != null) {
                 crossRefDao.upsert(LocalTaskTagCrossRef(taskId = tk.id, tagId = tag.id, modTime = now))
             }
+        }
+        // Đồng bộ alarm theo bản server (sửa giờ/nội dung ở máy khác → cập nhật; đã hoàn
+        // thành → huỷ). scheduleTaskNotification idempotent nên không nhân đôi / không nhắc sai.
+        if (tk.is_completed) {
+            notificationManager.cancelNotification(tk.id)
+        } else {
+            notificationManager.scheduleTaskNotification(
+                tk.id, tk.title, tk.description ?: "", fromIso(tk.start_time),
+            )
         }
     }
 
