@@ -34,7 +34,7 @@ class RoomBenchmarkTest {
     private lateinit var db: ToDoDatabase
     private lateinit var taskDao: TaskDAO
 
-    private val seedCount = 100
+    private val seedCount = 1000
     private val iterations = 30
 
     @Before

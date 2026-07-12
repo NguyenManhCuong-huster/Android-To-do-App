@@ -37,6 +37,10 @@ class TagsActivity : AppCompatActivity() {
         setupRecyclerView()
         observeData()
 
+        binding.btnBack.setOnClickListener {
+            finish()
+        }
+
         binding.fabAddTag.setOnClickListener {
             showAddTagDialog()
         }

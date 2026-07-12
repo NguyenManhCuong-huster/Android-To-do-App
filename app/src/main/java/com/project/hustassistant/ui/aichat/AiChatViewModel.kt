@@ -19,6 +19,7 @@ import com.project.hustassistant.data.grade.GradeRepository
 import com.project.hustassistant.data.news.News
 import com.project.hustassistant.data.news.NewsKind
 import com.project.hustassistant.data.news.NewsRepository
+import com.project.hustassistant.ui.aichat.AiChatViewModel.Companion.MAX_HISTORY_CHARS
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -358,6 +359,14 @@ class AiChatViewModel(
      * (bong bóng đang stream | Thinking nếu chưa có chữ nào).
      */
     private fun callAi(history: List<AiMessage>) {
+        // Chặn payload quá lớn: tổng ký tự = tin mới của user + toàn bộ lịch sử.
+        // Nếu vượt ngưỡng thì chỉ gửi phần MỚI NHẤT (tail) trong giới hạn (tin mới
+        // của user luôn được giữ trọn trước), và báo cho user biết.
+        val (sendHistory, trimmed) = capHistory(history)
+        if (trimmed) {
+            _state.value = _state.value.copy(errorMessage = OVER_LIMIT_NOTICE)
+        }
+
         val baseItems: List<AiChatItem> = _state.value.items.filterNot { it is AiChatItem.Thinking }
         val collectedTools = mutableListOf<AiChatItem.ToolCall>()
         val buffer = StringBuilder()
@@ -372,9 +381,12 @@ class AiChatViewModel(
 
         viewModelScope.launch {
             val flow = when (context) {
-                is ChatContext.Email      -> aiRepository.emailChatStream(context.emailId, history)
-                is ChatContext.News       -> aiRepository.newsChatStream(context.newsId, history)
-                is ChatContext.Standalone -> aiRepository.chatStream(history, STANDALONE_SYSTEM_INSTRUCTION)
+                is ChatContext.Email -> aiRepository.emailChatStream(context.emailId, sendHistory)
+                is ChatContext.News -> aiRepository.newsChatStream(context.newsId, sendHistory)
+                is ChatContext.Standalone -> aiRepository.chatStream(
+                    sendHistory,
+                    STANDALONE_SYSTEM_INSTRUCTION
+                )
             }
 
             runCatching {
@@ -391,7 +403,7 @@ class AiChatViewModel(
                             render()
                         }
 
-                        is AiStreamEvent.Done  -> finishStream(baseItems, collectedTools, ev)
+                        is AiStreamEvent.Done -> finishStream(baseItems, collectedTools, ev)
 
                         is AiStreamEvent.Error -> failStream(baseItems, collectedTools, ev.message)
                     }
@@ -521,6 +533,34 @@ class AiChatViewModel(
     private fun List<AiChatItem>.toMessageHistory(): List<AiMessage> =
         filterIsInstance<AiChatItem.Message>().map { it.message }
 
+    /**
+     * Giới hạn kích thước hội thoại gửi lên server theo tổng số ký tự nội dung —
+     * TÍNH CẢ tin mới của user (nằm cuối [history]) lẫn toàn bộ lịch sử.
+     * Nếu vượt [MAX_HISTORY_CHARS], giữ lại phần MỚI NHẤT (các tin gần đây) trong
+     * hạn mức; tin cũ nhất còn nằm trong hạn mức có thể bị cắt bớt phần đầu, chỉ
+     * giữ đuôi (phần mới hơn). Trả về (historyĐãCắt, cóCắtHayKhông).
+     */
+    private fun capHistory(history: List<AiMessage>): Pair<List<AiMessage>, Boolean> {
+        val total = history.sumOf { it.content.length }
+        if (total <= MAX_HISTORY_CHARS) return history to false
+
+        var budget = MAX_HISTORY_CHARS
+        val kept = ArrayDeque<AiMessage>()
+        for (msg in history.asReversed()) {
+            if (budget <= 0) break
+            val len = msg.content.length
+            if (len <= budget) {
+                kept.addFirst(msg)
+                budget -= len
+            } else {
+                // Cắt tin cũ nhất được giữ: chỉ lấy đuôi (phần ký tự mới nhất).
+                kept.addFirst(msg.copy(content = msg.content.substring(len - budget)))
+                budget = 0
+            }
+        }
+        return kept.toList() to true
+    }
+
     private fun Attachment.toRef() = AttachmentRef(
         id = id,
         fileName = fileName,
@@ -548,6 +588,12 @@ class AiChatViewModel(
     companion object {
         private const val TAG = "AiChatViewModel"
         private val DATE_FMT = SimpleDateFormat("dd/MM/yyyy", Locale.forLanguageTag("vi"))
+
+        /** Trần tổng ký tự nội dung hội thoại được gửi lên server trong 1 lượt. */
+        private const val MAX_HISTORY_CHARS = 1_000_000
+
+        private const val OVER_LIMIT_NOTICE =
+            "Đoạn hội thoại dài hơn 1.000.000 ký tự, chỉ gửi 1.000.000 ký tự mới nhất cho AI."
 
         /**
          * Phải khớp với ENV server `ATTACHMENT_TEXT_EXTRACT_EXTS`.
